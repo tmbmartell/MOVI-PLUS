@@ -375,6 +375,9 @@ def enroll(data:dict):
  if not re.fullmatch(r"[a-z0-9_]{4,32}",username) or len(name)<2 or len(pwd)<14 or not re.search("[A-Za-z]",pwd) or not re.search(r"\d",pwd):
   raise HTTPException(422,"Nome, usuário ou senha inválidos; senha precisa de 14 caracteres com letras e números")
  if data.get("accepted_rules") is not True:raise HTTPException(422,"É necessário confirmar ciência das condições do programa")
+ # Termos V8: cadastro só com todos os itens obrigatórios marcados; opcionais ficam como o motorista escolheu.
+ import legal_v8
+ legal_required,legal_optional=legal_v8.validate(data.get("legal"))
  with db() as c:
   c.execute("BEGIN IMMEDIATE")
   r=c.execute("SELECT hash FROM invites WHERE hash=? AND used_uid IS NULL AND expires>?",(sha(token),stamp())).fetchone()
@@ -383,6 +386,7 @@ def enroll(data:dict):
   c.execute("INSERT INTO users(username,phash,role,status,name,created_at) VALUES(?,?,?,?,?,?)",(username,password_hash(pwd),"driver","pending",name,now()))
   uid=c.execute("SELECT last_insert_rowid()").fetchone()[0]
   c.execute("INSERT INTO consents(uid,updated_at) VALUES(?,?)",(uid,now()))
+  legal_v8.record(c,uid,legal_required,legal_optional,"cadastro")
   save_profile(c,uid,{})
   c.execute("UPDATE invites SET used_uid=? WHERE hash=?",(uid,sha(token)))
   audit(c,uid,"enroll:requested");c.commit()
@@ -478,8 +482,11 @@ def export_self(u=Depends(driver)):
   agent_choices=agent_options(c,u["id"])
   agent_suggestions=[{"id":r["id"],"status":r["status"],"created_at":r["created_at"],"proposal":dec(r["encrypted"])}
    for r in c.execute("SELECT id,status,created_at,encrypted FROM finance_agent_proposals WHERE uid=? ORDER BY id",(u["id"],))]
+  import legal_v8
+  legal_v8.init(c)
+  legal_history=[dict(r) for r in c.execute("SELECT version,accepted_at,required,optional,origin FROM legal_acceptances WHERE uid=? ORDER BY id",(u["id"],))]
   audit(c,u["id"],"privacy:export");c.commit()
-  return {"profile":p,"consents":consent(c,u["id"]),"finances":finance,
+  return {"profile":p,"consents":consent(c,u["id"]),"legal_acceptances":legal_history,"finances":finance,
    "finance_agent_authorizations":agent_choices,"finance_agent_proposals":agent_suggestions,
    "note":"Exportação individual, sem senhas, documentos, mídia original ou chaves externas"}
 @app.post("/api/privacy/delete-request")
@@ -597,3 +604,8 @@ app.include_router(finance_agent_release_router)
 
 from finance_agent_pilot_v1 import router as finance_agent_pilot_router
 app.include_router(finance_agent_pilot_router)
+
+# Termos de Uso, Política de Privacidade e de Cookies com aceite registrado (V8).
+from legal_v8 import router as legal_router,install as legal_install
+app.include_router(legal_router)
+legal_install(app)
