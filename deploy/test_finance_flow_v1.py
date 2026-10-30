@@ -76,7 +76,7 @@ with tempfile.TemporaryDirectory(prefix="movi_flow_test_") as directory:
             (app.sha("admin-test-token"), 1, app.stamp() + 3600)
         )
         c.commit()
-    client.cookies.set("clube_session", "admin-test-token", secure=True)
+    client.cookies.set("clube_session", "admin-test-token")
     assert client.get("/api/finance/flow").status_code == 403
     assert client.get("/meu-fluxo").status_code == 403
     print("05 - administrator cannot open a driver's private statement: PASS")
