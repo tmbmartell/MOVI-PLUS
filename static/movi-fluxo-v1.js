@@ -83,6 +83,10 @@
   var year = parts.find(function (p) { return p.type === "year"; }).value;
   var monthNumber = parts.find(function (p) { return p.type === "month"; }).value;
   var localYearMonth = year + "-" + monthNumber;
+  var queryMonth = new URLSearchParams(window.location.search).get("month");
+  if (queryMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(queryMonth)) {
+    localYearMonth = queryMonth;
+  }
   byId("month").value = localYearMonth;
   var selectedId = null, knownRecurring = [];
   var form = byId("recurring-form");
