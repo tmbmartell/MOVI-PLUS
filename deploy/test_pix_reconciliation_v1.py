@@ -114,4 +114,33 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_statement_qa_") as folder:
         assert c.execute("SELECT COUNT(*) FROM audit WHERE action='pix:bank_statement_review'").fetchone()[0]==3
     print("07 - disputed can be reconciled later with a different unique reference; audit retained: PASS")
 
-print("7/7 manual Pix statement review tests PASS. All synthetic, no bank/WhatsApp integration.")
+    # More than 300 historical claims cannot silently disappear from manager view.
+    with app.db() as c:
+        for i in range(321):
+            day=(dt.date(2026,1,1)+dt.timedelta(days=i)).isoformat()
+            c.execute("INSERT INTO movi_pix_declarations(uid,entry_day,slot,expected_cents,created_at) "
+                      "VALUES(2,?,'tarde',100,?)",(day,app.now()))
+        c.commit()
+    first=adm.get(api+"/reviews?page=1&page_size=50")
+    older=adm.get(api+"/reviews?page=2&page_size=50")
+    assert first.status_code==older.status_code==200
+    a=first.json();b=older.json()
+    assert a["count"]==323 and b["count"]==323
+    assert len(a["items"])==50 and len(b["items"])==50
+    assert a["has_next"] is True and a["page"]==1 and b["page"]==2
+    assert {x["id"] for x in a["items"]}.isdisjoint({x["id"] for x in b["items"]})
+    assert a["pending_count"]==321 and a["confirmed_manually_cents"]==2*expected
+    assert a["declared_cents"]==32100+2*expected
+    pending=adm.get(api+"/reviews?state=pending&page=1&page_size=75").json()
+    confirmed_filter=adm.get(api+"/reviews?state=confirmed_manual").json()
+    feb=adm.get(api+"/reviews?month=2026-02&page=2&page_size=10").json()
+    assert pending["count"]==321 and len(pending["items"])==75
+    assert confirmed_filter["count"]==2 and all(x["review_state"]=="confirmed_manual" for x in confirmed_filter["items"])
+    assert feb["count"]==28 and len(feb["items"])==10
+    assert adm.get(api+"/reviews?state=invalid").status_code==422
+    assert adm.get(api+"/reviews?page=0").status_code==422
+    assert adm.get(api+"/reviews?page_size=101").status_code==422
+    assert adm.get(api+"/reviews?month=2026-99").status_code==422
+    print("08 - 323 deposits: page/filter/count accurate, no overlaps, old items accessible: PASS")
+
+print("8/8 manual Pix statement review tests PASS. All synthetic, no bank/WhatsApp integration.")
