@@ -299,6 +299,11 @@ def run_notice(instant=None,dry_run=True):
             from finance_auto_report_v1 import _pilot_chat
             chat=_pilot_chat(c,uid)
             if not chat:continue
+            # Do not remind a driver who has already declared this turn paid,
+            # even while the manager is verifying the bank statement.
+            if c.execute("SELECT 1 FROM movi_pix_declarations WHERE uid=? AND entry_day=? AND slot=?",
+                         (uid,day.isoformat(),slot)).fetchone():
+                continue
             receiver,item=_item(c,uid,day)
             amount=next(x["amount_cents"] for x in item["slots"] if x["slot"]==slot)
             # No duplicate attempts, including when WAHA response is ambiguous.
