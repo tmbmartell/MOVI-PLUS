@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 
 from app import ROOT, db, driver, profile
 from finance_agent_conversation_v2 import month_data
+from finance_recurring_v1 import list_for_month
 
 router = APIRouter()
 TZ = ZoneInfo("America/Porto_Velho")
@@ -59,6 +60,7 @@ def build_flow(c, uid, requested_month=""):
         {"label": str(name)[:60], "amount_cents": int(amount)}
         for name, amount in data["categories"] if int(amount) > 0
     ]
+    scheduled = list_for_month(c, uid, month)
     # Uma parcela pode estar registrada também como despesa: não somar os dois
     # conjuntos nem deduzir "saldo disponível" ou dinheiro já pago.
     return {
@@ -75,7 +77,9 @@ def build_flow(c, uid, requested_month=""):
         "recurring_commitments_declared": commitments,
         "recurring_commitments_total_cents": sum(x["amount_cents"] for x in commitments),
         "other_monthly_estimates": estimates,
-        "notice": "Somente lançamentos registrados/confirmados. O resultado não é saldo bancário. Compromissos e estimativas declarados não são comprovantes de pagamento e não são somados novamente às despesas.",
+        "scheduled_expenses": scheduled,
+        "scheduled_expenses_total_cents": sum(x["amount_cents"] for x in scheduled),
+        "notice": "Somente lançamentos registrados/confirmados. O resultado não é saldo bancário. Compromissos agendados e estimativas do perfil podem se referir à mesma conta. Nenhum desses valores é comprovante de pagamento e eles não entram novamente nas despesas realizadas.",
     }
 
 @router.get("/api/finance/flow")
