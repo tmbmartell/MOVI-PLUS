@@ -209,6 +209,11 @@ def _pilot_chat(conn,uid):
     from whatsapp_bridge_v5 import config_get
     if not conn.execute("SELECT 1 FROM users WHERE id=? AND role='driver' AND status='active'",(uid,)).fetchone():
         return None
+    # V8 legal acceptance is required for outbound reports as well as API access.
+    from legal_v8 import accepted_version,VERSION
+    accepted=accepted_version(conn,uid)
+    if not accepted or accepted["version"]!=VERSION:
+        return None
     if not permitted(conn,uid) or not options(conn,uid)["enabled"]:
         return None
     _,inbound_enabled=private_settings(conn)
