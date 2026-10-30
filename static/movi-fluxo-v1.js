@@ -74,14 +74,12 @@
       byId("error").textContent = err.message || "Falha de conexão.";
     }
   }
-  var today = new Date();
-  var localYearMonth = new Intl.DateTimeFormat("en-CA", {
+  var parts = new Intl.DateTimeFormat("en-US", {
     timeZone:"America/Porto_Velho",year:"numeric",month:"2-digit"
-  }).format(today);
-  // Alguns navegadores retornam mm/yyyy para month; normalizar se necessário.
-  if (!/^\d{4}-\d{2}$/.test(localYearMonth)) {
-    localYearMonth = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0");
-  }
+  }).formatToParts(new Date());
+  var year = parts.find(function (p) { return p.type === "year"; }).value;
+  var monthNumber = parts.find(function (p) { return p.type === "month"; }).value;
+  var localYearMonth = year + "-" + monthNumber;
   byId("month").value = localYearMonth;
   byId("month").addEventListener("change", load);
   load();
