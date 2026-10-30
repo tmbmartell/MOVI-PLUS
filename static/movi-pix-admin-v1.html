@@ -28,10 +28,15 @@ hr{border:0;border-top:1px solid #44606c;margin:20px 0}
 <label class="checkbox"><input name="enabled" type="checkbox"> Liberar a chave para motoristas com parcela configurada</label>
 <button type="submit">Salvar configuração</button></form><p class="status" id="receiver-status" role="status"></p>
 <p class="note warning">Salvar o CNPJ não confirma que essa chave está cadastrada como Pix. O recebedor deve ser conferido antes de ativar.</p></section>
-<section><h2>2. Parcela individual do motorista</h2><form id="driver-form">
+<section><h2>2. Horários dos três lembretes</h2><p class="note">Defina os horários locais de Porto Velho. Salvar não liga o envio automático.</p><form id="schedule-form">
+<label>Manhã (6h a 11h) <input name="manha" type="number" min="6" max="11" step="1" value="9" required></label>
+<label>Tarde (12h a 17h) <input name="tarde" type="number" min="12" max="17" step="1" value="14" required></label>
+<label>Noite (18h a 22h) <input name="noite" type="number" min="18" max="22" step="1" value="19" required></label>
+<button type="submit">Salvar horários</button></form><p id="schedule-status" class="status" role="status"></p></section>
+<section><h2>3. Parcela individual do motorista</h2><form id="driver-form">
 <label>Motorista <select name="uid" id="driver-select" required><option value="">Selecione um motorista</option></select></label>
 <label>Valor da parcela mensal (R$) <input name="monthly_amount" type="number" step=".01" min=".01" required placeholder="Ex.: 1500.00"></label>
 <label class="checkbox"><input name="active" type="checkbox" checked> Parcela ativa</label>
 <button type="submit">Salvar parcela</button></form><p class="status" id="driver-status" role="status"></p><p class="note">Os valores diários são calculados para 28, 29, 30 ou 31 dias sem exceder a parcela do mês.</p></section>
-<section><h2>3. Conferência manual dos depósitos</h2><p class="note">Cada motorista pode informar que pagou. Para confirmar, confira no extrato bancário o valor, a data e a referência única da transferência. O MOVI+ não acessa contas bancárias.</p><p class="status" id="review-status" role="status"></p><div id="declared-list">Nenhuma declaração registrada.</div></section>
+<section><h2>4. Conferência manual dos depósitos</h2><p class="note">Cada motorista pode informar que pagou. Para confirmar, confira no extrato bancário o valor, a data e a referência única da transferência. O MOVI+ não acessa contas bancárias.</p><p class="status" id="review-status" role="status"></p><div id="declared-list">Nenhuma declaração registrada.</div></section>
 </main></body></html>
