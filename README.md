@@ -30,6 +30,8 @@ Aplicativo de gestão financeira e acompanhamento do Clube do Motorista. Base at
 - O gestor pode configurar os **horários individuais dos três turnos**, padrão 09h, 14h e 19h no horário de Porto Velho. O aviso inclui o favorecido informado e exige conferência no banco; alterações não ativam disparos.
 - Em 30/10/2026 o backup local criptografado da V5 foi **validado em teste de restauração somente leitura** (chave de backup, integridade do pacote e SQLite). A cópia externa e restauração completa do serviço continuam pendentes.
 
+**Escala operacional em homologação:** conferência Pix agora aceita filtros por mês/situação e paginação com totais sobre o conjunto inteiro (testado com 323 declarações fictícias). O cadastro de parcelas oferece busca por nome, usuário ou ID, trazendo só 25 resultados de cada vez (testado com 4.000 motoristas fictícios). Esses são testes de funcionalidade, **não** prova de capacidade concorrente ou de carga em produção.
+
 ## Documentação
 - [Organograma e arquitetura](docs/arquitetura/ORGANOGRAMA.md)
 - [Capturas de tela](docs/prints/INDICE-PRINTS.md)
