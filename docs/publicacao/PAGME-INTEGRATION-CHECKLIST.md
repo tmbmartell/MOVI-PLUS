@@ -1,35 +1,24 @@
-# MOVI+ P1 — integração com o provedor de cobrança (pendente)
+# MOVI+ P1 — Pix direto por CNPJ
 
-**Status em 30/10/2026:** não há credenciais ou documentação oficial confirmando qual serviço o cliente chama de **“Pag.me”**. **Não assumir que seja Pagar.me, Pagou, PagBank ou outra empresa** só porque os nomes são semelhantes. Nenhum pagamento, cobrança automática ou conciliação real está autorizado até a identificação do serviço e assinatura contratual.
+**Decisão atual:** o Clube envia solicitações de pagamento com a **chave Pix CNPJ do recebedor**, em vez de usar um gateway Pag.me. O valor é calculado por motorista e dividido em três turnos. O responsável deve confirmar no banco que a chave está cadastrada e qual é o titular **antes da liberação**.
 
-## Dependências que precisam ser confirmadas pelo responsável financeiro
-- Nome jurídico e domínio oficial da plataforma contratada e **documentação da API em produção e sandbox**, com versão.
-- Conta beneficiária, titular da conta/chave Pix e termos que autorizam cobrança diária.
-- Credenciais de sandbox e credenciais de produção fornecidas por canal privado (NUNCA por GitHub, log ou print público).
-- Endpoints e esquema para criar cobrança, consultar status, cancelar, reembolsar e conciliar.
-- Mecanismo oficial de assinatura de webhook, segredo de assinatura, validade do timestamp, replay e identificador idempotente.
-- Taxas, vencimento, horários, fuso **America/Porto_Velho**, dias úteis/feriados, reprocessamento e política de falhas.
-- Tratamento de chargebacks/estornos, valor parcial, pagamento duplicado e divergências, política de reconciliação com extrato da conta recebedora.
-- Identidade do recebedor, regras de consentimento e responsabilidade por dados financeiros do motorista.
-- Política de antecipação de parcelas sem duplicar a obrigação mensal.
+## Operação
+- O gestor cadastra a chave CNPJ em `/gestao/pix`, informa o nome do titular após verificar no banco e configura o valor mensal do motorista. O armazenamento da chave é criptografado no banco, não hardcoded no código.
+- O motorista abre `/meu-pix` para visualizar as três solicitações, copiar o CNPJ/valor da transferência e, se já pagou, registrar uma **declaração pendente**.
+- A soma de todos os turnos fecha a parcela mensal exata, com ajuste automático para 28, 29, 30 ou 31 dias. O valor da primeira programação de cada mês fica congelado para evitar mudanças retroativas.
+- O canal WhatsApp usa o contato pessoal previamente vinculado ao único piloto e autorização específica. Por padrão, nenhum aviso é enviado. Há templates de serviço/timer, mas **não estão instalados em produção**.
 
-## Regra financeira de planejamento já definida
-Para evitar cobranças indevidas, **um mês com 28, 29, 30 ou 31 dias nunca pode gerar cobrança acima do valor da parcela**. O exemplo de 3 cobranças por dia (R$ 15 + R$ 15 + R$ 20) fecha R$ 1.500 somente em meses de 30 dias. O módulo puro `finance_deposit_planner_v1.py` distribui uma parcela mensal exata entre os dias do mês e os três turnos sem perda de centavos. É um **plano matemático**, não execução de cobrança.
+## Conciliação
+**Uma chave Pix não é uma API de banco.** O sistema não tem como saber automaticamente se o dinheiro foi recebido. O status "declarado pelo motorista" não é "confirmado no banco". O gestor precisa comparar as declarações com o extrato do recebedor antes de reconhecer qualquer pagamento.
 
-## Contrato de dados sugerido (sem ativação)
-`driver_id`, `month`, `installment_cents`, `due_date`, `slot` (manhã/tarde/noite), `expected_cents`, `provider_reference`, `provider_event_id`, `status` (previsto/emitido/pago/estornado/falhou), `created_at`, `paid_at`, `refund_at`.
+Se o cliente futuramente contratar integração bancária: obter API oficial autenticada, sandbox, identificadores de transação, webhook assinado, controle de eventos repetidos, estorno e teste completo. Não presumir integração por nome comercial semelhante a Pag.me.
 
-- Motorista dizer **“já paguei”** ou enviar comprovante: registrar **declaração**, nunca marcar **confirmado pelo banco**.
-- Reconciliação real só mediante evento assinado do provedor **ou** consulta autenticada do provedor e comparação com valores/idempotência.
-- Webhook repetido ou fora de ordem: processe exatamente uma vez, sem pagar/duplicar o mesmo lançamento.
-- Guardar comprovantes e dados sensíveis com proteção adequada, em ciclo de retenção LGPD.
+## Homologação
+1. Recebedor confirma titular/chave Pix no aplicativo bancário.
+2. Gestor libera o cadastro da chave, vincula a parcela e testa instruções com motorista fictício.
+3. Testar consentimento do piloto e verificar que o WhatsApp não envia antes da liberação.
+4. Validar no extrato bancário **realmente recebido** antes de registrar confirmação.
+5. Testar revogação, cancelamentos, mudança da chave e fevereiro/meses de 31 dias.
+6. Revisão dos termos, LGPD e segurança antes da utilização comercial.
 
-## Plano de homologação
-1. Confirmar exatamente a plataforma e revisar o contrato com o cliente.
-2. Criar uma integração de **sandbox**, com IDs de pagamento fictícios e webhook assinado.
-3. Simular duplicidade, pagamento parcial, estorno e indisponibilidade.
-4. Conciliar com um extrato financeiro de sandbox e revisão humana.
-5. Validar limite de cobranças para fevereiro e meses de 31 dias.
-6. Ativar em produção **somente com autorização formal do responsável e prova de segurança.**
-
-**Não realizar transações bancárias reais, nem inferir pagamento de texto ou comprovante.**
+`deploy/test_pix_deposit_v1.py` valida o fluxo com dados sintéticos. Não executa pagamento bancário nem envia mensagens reais.
