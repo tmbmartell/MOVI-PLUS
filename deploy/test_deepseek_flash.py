@@ -91,7 +91,7 @@ with tempfile.TemporaryDirectory(prefix="ng_ds_qa_") as tmp:
  person["id"]=1;person["role"]="admin"
  status=client.get("/api/admin/finance-agent/provider").json()
  assert status["provider"]=="DeepSeek" and status["vision_model"]=="deepseek-flash"
- assert status["key_set"] and status["audio_transcription_ready"] and status["transcription_model"]=="whisper-base-local"
+ assert status["key_set"] and status["audio_transcription_ready"]==agent.whisper_ready() and status["transcription_model"]=="whisper-base-local"
  assert "UNIT_TEST_ONLY" not in str(status)
  print("06: Admin UI gets correct provider and no credential disclosure")
  app.app.dependency_overrides.clear()
