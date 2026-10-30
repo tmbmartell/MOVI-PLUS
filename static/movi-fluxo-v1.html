@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Meu fluxo financeiro · MOVI+</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#101f29;color:#f7f6ee}
+    *{box-sizing:border-box}body{margin:0;padding:18px 14px 45px}
+    main{max-width:680px;margin:auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 22px;gap:10px}
+    .logo{letter-spacing:.08em;font-weight:800;color:#f6be71;font-size:1.35rem}
+    a{color:#f6be71}h1{font-size:1.5rem;margin:.1rem 0 .4rem}
+    h2{font-size:1.08rem;margin:0 0 14px}.small{color:#bac9cf;font-size:.83rem}
+    .panel{background:#1a3341;border:1px solid #355162;border-radius:16px;padding:18px;margin-bottom:14px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .tile{background:#244250;padding:14px;border-radius:12px;min-width:0}
+    .tile span{display:block;color:#cfdee1;font-size:.76rem;margin-bottom:9px}
+    .tile strong{font-size:clamp(1.05rem,4vw,1.52rem);overflow-wrap:anywhere}
+    .amount{font-size:clamp(1.85rem,7vw,2.6rem);font-weight:800;margin:6px 0;color:#82dbc4}
+    .amount.negative{color:#ffbc9d}
+    .bar{height:10px;background:#355462;border-radius:10px;overflow:hidden;margin:5px 0 15px}
+    .fill{height:100%;background:#ebb76f;width:0;border-radius:10px}
+    .cat{display:flex;gap:10px;justify-content:space-between;align-items:baseline;overflow-wrap:anywhere}
+    .cat .name{flex:1}.cat .value{font-weight:700;white-space:nowrap}
+    .line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #365260}
+    .line:last-child{border-bottom:0}.line strong{text-align:right}
+    .muted{color:#b3c9d3}.note{line-height:1.5;font-size:.82rem;color:#bcced4}
+    .toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    input,select{background:#244250;color:#fff;border:1px solid #577582;border-radius:8px;padding:10px;font:inherit;max-width:100%;width:100%}
+    input[type=month]{max-width:175px}.recurring-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+    label.field{display:flex;flex-direction:column;gap:6px;font-size:.82rem;color:#cfdee1}
+    label.field.full{grid-column:1 / -1}.btns{grid-column:1 / -1;display:flex;gap:10px;flex-wrap:wrap}
+    button{font:inherit;cursor:pointer;border-radius:9px;padding:10px 13px;border:1px solid #7896a3;color:#f8f7ef;background:#265367}
+    button.primary{background:#dbad69;border-color:#dbad69;color:#182b33;font-weight:700}
+    button.smallbtn{padding:6px 10px;font-size:.81rem}
+    button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f6be71;outline-offset:2px}
+    .recurring-actions{display:flex;gap:5px;flex-wrap:wrap}.recurring-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #355462;padding:10px 0}
+    .recurring-row:last-child{border-bottom:none}.recurring-row p{margin:2px 0}.recurring-row .small{font-size:.76rem}
+    @media(max-width:430px){.recurring-form{grid-template-columns:1fr}.recurring-row{align-items:flex-start;flex-direction:column}}
+    #error{padding:13px;border-radius:10px;background:#583834;color:#ffdcce}
+    [hidden]{display:none!important}
+    @media(max-width:340px){.grid{grid-template-columns:1fr}}
+  </style>
+  <script src="/assets/movi-fluxo-v1.js" defer></script>
+</head>
+<body>
+<main>
+<header><div class="logo">MOVI+</div><a href="/">Voltar ao painel</a></header>
+<h1>Meu dinheiro, com clareza</h1>
+<p class="small">Veja seus lançamentos e os compromissos que informou ao MOVI+.</p>
+<section class="panel toolbar">
+  <label for="month">Escolher mês</label><input type="month" id="month">
+  <span class="small" id="period"></span>
+</section>
+<div id="error" role="alert" hidden></div>
+<div id="content" hidden>
+<section class="grid" aria-label="Resumo do mês">
+  <div class="tile"><span>Ganhos registrados</span><strong id="income"></strong></div>
+  <div class="tile"><span>Despesas registradas</span><strong id="expense"></strong></div>
+</section>
+<section class="panel" style="margin-top:14px"><div class="small">Resultado dos registros no mês</div><div class="amount" id="result"></div><p class="small" id="result-note"></p></section>
+<section class="panel"><h2>Para onde foi seu dinheiro</h2><div id="categories"></div></section>
+<section class="panel">
+  <h2>Minhas contas fixas</h2>
+  <p class="small">Cadastre aluguel, água, energia, seguro e outras contas que se repetem. São despesas previstas; o sistema não registra pagamento sozinho.</p>
+  <div id="scheduled"></div>
+  <div class="line"><span>Previsto para o mês escolhido</span><strong id="scheduled-total"></strong></div>
+  <h2 style="margin-top:20px">Organizar contas recorrentes</h2>
+  <div id="scheduled-manage"></div>
+  <form id="recurring-form" class="recurring-form">
+    <label class="field full">Nome da conta <input name="title" maxlength="65" required placeholder="Ex.: Aluguel do carro"></label>
+    <label class="field">Categoria <select name="category"><option>Moradia</option><option>Veículo</option><option>Alimentação</option><option>Seguro</option><option>Saúde</option><option>Educação</option><option>Dívidas</option><option>Outros</option></select></label>
+    <label class="field">Valor previsto (R$) <input name="amount" type="number" min="0.01" max="100000000" step="0.01" inputmode="decimal" required></label>
+    <label class="field">Dia do vencimento <input name="due_day" type="number" min="1" max="31" value="10" required></label>
+    <label class="field">A partir de <input name="starts" type="month" required></label>
+    <label class="field">Até o mês (opcional) <input name="ends" type="month"></label>
+    <label class="field full"><span><input name="active" type="checkbox" checked style="width:auto"> Conta ativa</span></label>
+    <div class="btns"><button class="primary" type="submit" id="save-recurring">Salvar conta</button><button type="button" id="cancel-recurring" hidden>Cancelar edição</button></div>
+  </form>
+  <p id="recurring-feedback" class="small" role="status" aria-live="polite"></p>
+</section>
+<section class="panel"><h2>Compromissos mensais informados</h2><p class="small">Parcelas recorrentes declaradas no cadastro; não significam pagamento e podem já aparecer nos gastos acima.</p><div id="recurring"></div><div class="line"><span>Valor mensal informado</span><strong id="recurring-total"></strong></div></section>
+<section class="panel"><h2>Outras estimativas do cadastro</h2><div id="estimates"></div></section>
+<section class="panel"><p class="note" id="notice"></p><p class="note" id="pending"></p></section>
+</div>
+</main>
+</body>
+</html>
