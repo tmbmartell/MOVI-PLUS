@@ -3,7 +3,7 @@ import os,sys,tempfile,json
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="ng_ds_qa_") as tmp:
  os.environ["CLUBE_DATA"]=tmp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app,finance_agent_v1 as agent
  from finance_agent_core import classify_text
  assert agent.MODEL_NAME=="deepseek-flash"
