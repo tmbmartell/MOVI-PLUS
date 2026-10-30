@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from unittest.mock import patch
 with tempfile.TemporaryDirectory(prefix="ng_whisper_test_") as temp:
  os.environ["CLUBE_DATA"]=temp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app,finance_agent_v1 as agent
  assert agent.whisper_ready()
  assert agent.LOCAL_WHISPER_MODEL.stat().st_size>100*1024*1024
