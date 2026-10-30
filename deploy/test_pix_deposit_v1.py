@@ -54,6 +54,17 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     assert client.put("/api/admin/pix",json={**form,"recipient_name":"Recebedor Teste"},headers=h).status_code==200
     assert client.put("/api/admin/pix",json={**form,"recipient_name":"Recebedor Teste","bank_verified":True,"enabled":True},headers=h).status_code==200
     assert client.put("/api/admin/pix/driver/2",json={"monthly_amount":"1500.00","active":True},headers=h).status_code==200
+    default_schedule=client.get("/api/admin/pix/schedule")
+    assert default_schedule.status_code==200
+    assert default_schedule.json()["hours"]=={"manha":9,"tarde":14,"noite":19}
+    assert client.put("/api/admin/pix/schedule",json={"manha":5,"tarde":14,"noite":19},headers=h).status_code==422
+    assert client.put("/api/admin/pix/schedule",json={"manha":True,"tarde":14,"noite":19},headers=h).status_code==422
+    changed=client.put("/api/admin/pix/schedule",json={"manha":8,"tarde":15,"noite":20},headers=h)
+    assert changed.status_code==200,changed.text
+    assert changed.json()["delivery_activated"] is False
+    assert client.get("/api/admin/pix/schedule").json()["hours"]=={"manha":8,"tarde":15,"noite":20}
+    restored=client.put("/api/admin/pix/schedule",json={"manha":9,"tarde":14,"noite":19},headers=h)
+    assert restored.status_code==200
     assert client.get("/gestao/pix").status_code==200
     assert "Depósitos via Pix" in client.get("/gestao/pix").text
     print("03 - admin stores key encrypted, enables only with bank-attestation + recipient name: PASS")
@@ -69,6 +80,7 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     assert sum(s["amount_cents"] for s in j["slots"])==j["slots"][0]["amount_cents"]+j["slots"][1]["amount_cents"]+j["slots"][2]["amount_cents"]
     assert all(key.replace(".","").replace("/","").replace("-","") in s["message"] for s in j["slots"])
     assert all("confirma" in s["message"].lower() or "banco" in s["message"].lower() for s in j["slots"])
+    assert all("Favorecido informado pelo Clube: Recebedor Teste" in s["message"] for s in j["slots"])
     assert client.get("/meu-pix").status_code==200
     print("04 - three daily requests include validated Pix key and exact planned values: PASS")
 
