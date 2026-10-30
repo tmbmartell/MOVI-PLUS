@@ -5,7 +5,7 @@ from fastapi import HTTPException
 import httpx
 with tempfile.TemporaryDirectory(prefix="ng-waha-connection-qa-") as work:
  os.environ["CLUBE_DATA"]=work
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app
  from whatsapp_bridge_v5 import waha
  cfg={"base_url":"http://127.0.0.1:18182","api_key":"FAKE_TEST_KEY","session":"clube-motorista"}
