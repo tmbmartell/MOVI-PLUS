@@ -141,28 +141,36 @@ async function stage2Tasks(){
 function stage2CampaignCard(x,adminMode,legacy=false){
  return '<article class="card s2-campaign-card"><div class="row">'+stage2Status(x.status)+'<small>'+safe(x.segment&&x.segment!=='all'?'Público: '+x.segment:'Público geral com autorização')+'</small></div>'+
  '<h3>'+safe(x.title)+'</h3><p class="s2-campaign-copy">'+safe(x.body)+'</p>'+stage2Media(x)+
- (adminMode&&!legacy?'<div class="row" style="margin-top:12px"><small>Somente dentro do sistema</small><button class="btn-lite btn-sm" data-campaign-id="'+x.id+'" data-publish="'+(x.status==='published'?'draft':'published')+'">'+(x.status==='published'?'Voltar a rascunho':'Publicar no Clube')+'</button></div>':'')+
+ (adminMode&&!legacy?'<div class="row" style="margin-top:12px"><small>Somente dentro do sistema</small><button type="button" class="btn-lite btn-sm" data-edit-campaign="'+x.id+'">Editar texto e banner</button><button type="button" class="btn-lite btn-sm" data-campaign-id="'+x.id+'" data-publish="'+(x.status==='published'?'draft':'published')+'">'+(x.status==='published'?'Voltar a rascunho':'Publicar no Clube')+'</button></div>':'')+
  '</article>';
 }
 async function stage2Campaigns(){
  const [feed,old]=await Promise.all([request('program/campaigns'),request('campaigns')]);
  const adminMode=user.role==='admin';
  let intro=heading(adminMode?'Campanhas e comunicação':'Novidades do Clube',
- adminMode?'Campanhas internas com fotos, vídeos, áudios e segmentação por plataforma.':'Acompanhe comunicados que você autorizou receber dentro do Clube.');
- let form=adminMode?'<section class="card"><h3>Criar campanha interna</h3><form class="stack" id="s2CampaignForm"><div><label>Título</label><input name="title" maxlength="100" required></div>'+
+ adminMode?'Crie, edite e publique banners, ofertas e comunicados pelo painel, com público selecionável.':'Acompanhe comunicados que você autorizou receber dentro do Clube.');
+ let form=adminMode?'<section class="card"><h3 id="s2CampaignFormTitle">Nova campanha ou banner</h3><p class="muted" id="s2CampaignEditHint">Você pode salvar como rascunho e publicar depois. Campanhas existentes também podem ser editadas.</p><form class="stack" id="s2CampaignForm"><div><label>Título</label><input name="title" maxlength="100" required></div>'+
  '<div><label>Mensagem</label><textarea name="body" maxlength="1200" required></textarea></div>'+
  '<div class="fields"><div><label>Segmento</label><select name="segment">'+[
  ['all','Todos que autorizaram campanhas'],['UBER','Uber'],['99','99'],['URBANO NORTE','Urbano Norte'],['LEVA EU','Leva Eu'],['IN DRIVE','InDrive'],['Outro','Outra plataforma']
  ].map(([v,l])=>'<option value="'+safe(v)+'">'+safe(l)+'</option>').join('')+'</select></div>'+
  '<div><label>Situação</label><select name="status"><option value="draft">Rascunho</option><option value="published">Publicar no sistema</option></select></div></div>'+
- '<div><label>Mídia (opcional, até 8 MB)</label><input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp,video/mp4,audio/mpeg"><span class="muted">Fotos, GIF, vídeo MP4 ou áudio MP3. Arquivo protegido; sem WhatsApp.</span></div>'+
- '<button class="btn" type="submit">Salvar campanha</button></form></section>':'<div class="notice">Você vê somente campanhas permitidas pelas suas autorizações. Não há envio de mensagens ao seu WhatsApp.</div>';
- $('#body').innerHTML=intro+(adminMode?'<div class="s2-dashboard-grid">'+form+'<section class="card"><h3>Segmentação e privacidade</h3><p>Campanhas gerais só aparecem para participantes que autorizaram marketing. Campanhas específicas por plataforma exigem também autorização de análise socioeconômica.</p><div class="notice">O conteúdo fica dentro do sistema. Imagens e vídeos são guardados criptografados. Publicar aqui não envia mensagens, não cria cobranças e não movimenta Pix.</div></section></div>':form)+
+ '<div><label>Banner ou mídia (opcional, até 8 MB)</label><input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp,video/mp4,audio/mpeg"><span class="muted">Imagem PNG/JPG, GIF, WebP, MP4 ou MP3. Ao editar, um novo arquivo substitui o anterior. Publicação apenas dentro do MOVI+.</span></div>'+ '<label class="muted"><input type="checkbox" name="remove_media"> Remover banner/mídia da campanha ao salvar</label>'+
+ '<div class="row"><button class="btn" type="submit" id="s2CampaignSave">Salvar campanha</button><button class="btn-lite" type="button" id="s2CampaignCancel" hidden>Cancelar edição</button></div></form></section>':'<div class="notice">Você vê somente campanhas permitidas pelas suas autorizações. Não há envio de mensagens ao seu WhatsApp.</div>';
+ $('#body').innerHTML=intro+(adminMode?'<div class="s2-dashboard-grid">'+form+'<section class="card"><h3>Segmentação e privacidade</h3><p>Campanhas gerais só aparecem para participantes que autorizaram marketing. Campanhas específicas por plataforma exigem também autorização de análise socioeconômica.</p><div class="notice">Campanhas podem ser atualizadas pelo gestor quando necessário. Banner e texto ficam no MOVI+. Nenhum envio automático por WhatsApp, cobrança ou movimentação Pix acontece ao publicar.</div></section></div>':form)+
  '<h3>'+ (adminMode?'Campanhas cadastradas':'Campanhas para você')+'</h3>'+
  (feed.items.length?'<div class="s2-campaign-grid">'+feed.items.map(x=>stage2CampaignCard(x,adminMode)).join('')+'</div>':stage2Empty('Nenhuma campanha nova publicada para este perfil.'))+
  (old.items.length?'<section class="card"><h3>Publicações anteriores</h3><div class="s2-campaign-grid">'+old.items.map(x=>stage2CampaignCard(x,adminMode,true)).join('')+'</div></section>':'');
  if(adminMode){
   const form=document.getElementById('s2CampaignForm');
+  const resetCampaignEdit=()=>{
+   form.reset();delete form.dataset.editId;
+   document.getElementById('s2CampaignFormTitle').textContent='Nova campanha ou banner';
+   document.getElementById('s2CampaignEditHint').textContent='Você pode salvar como rascunho e publicar depois. Campanhas existentes também podem ser editadas.';
+   document.getElementById('s2CampaignSave').textContent='Salvar campanha';
+   document.getElementById('s2CampaignCancel').hidden=true;
+  };
+  document.getElementById('s2CampaignCancel').onclick=resetCampaignEdit;
   form.onsubmit=async e=>{
    e.preventDefault();let b=form.querySelector('[type=submit]');b.disabled=true;
    try{
@@ -176,12 +184,32 @@ async function stage2Campaigns(){
      let j=await reply.json();
      if(!reply.ok)throw Error(j.detail||'Erro ao enviar mídia');
      body.media_id=j.id;
+    }else if(form.dataset.editId&&f.get('remove_media')==='on'){
+     body.media_id=null;
     }
-    await request('program/campaigns',body);
-    msg('Campanha salva internamente. Nenhum WhatsApp foi enviado.');await stage2Campaigns();
+    const editing=form.dataset.editId;
+    if(editing)await request('program/campaigns/'+editing,body,'PUT');
+    else await request('program/campaigns',body);
+    msg(editing?'Campanha atualizada. Nenhum WhatsApp foi enviado.':'Campanha salva internamente. Nenhum WhatsApp foi enviado.');
+    await stage2Campaigns();
    }catch(err){msg(err.message)}finally{b.disabled=false}
   };
   document.getElementById('body').onclick=async e=>{
+   const edit=e.target.closest('[data-edit-campaign]');
+   if(edit){
+    const c=feed.items.find(x=>String(x.id)===edit.dataset.editCampaign);
+    if(!c)return;
+    form.dataset.editId=String(c.id);
+    for(const k of ['title','body','segment','status'])form.elements.namedItem(k).value=c[k];
+    form.elements.namedItem('file').value='';
+    form.elements.namedItem('remove_media').checked=false;
+    document.getElementById('s2CampaignFormTitle').textContent='Editar campanha #'+c.id;
+    document.getElementById('s2CampaignEditHint').textContent=(c.media_id?'A mídia atual será mantida se você não enviar outra. ':'Esta campanha ainda não tem banner. ')+(c.status==='published'?'Atenção: alterações salvas ficam visíveis imediatamente aos motoristas autorizados.':'Ela continuará em rascunho até ser publicada.');
+    document.getElementById('s2CampaignSave').textContent='Salvar alterações';
+    document.getElementById('s2CampaignCancel').hidden=false;
+    form.scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+   }
    let t=e.target.closest('[data-campaign-id]');if(!t)return;
    if(t.dataset.publish==='published'&&!confirm('Publicar esta campanha somente no sistema para os motoristas autorizados?'))return;
    try{await request('program/campaigns/'+t.dataset.campaignId,{status:t.dataset.publish},'PUT');msg('Estado atualizado');await stage2Campaigns()}
