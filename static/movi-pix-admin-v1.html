@@ -34,6 +34,8 @@ hr{border:0;border-top:1px solid #44606c;margin:20px 0}
 <label>Noite (18h a 22h) <input name="noite" type="number" min="18" max="22" step="1" value="19" required></label>
 <button type="submit">Salvar horários</button></form><p id="schedule-status" class="status" role="status"></p></section>
 <section><h2>3. Parcela individual do motorista</h2><form id="driver-form">
+<label>Buscar motorista por nome, usuário ou ID <input id="driver-search" maxlength="60" placeholder="Digite o nome ou número do motorista"></label>
+<button type="button" id="driver-find">Pesquisar motorista</button><p id="driver-search-status" class="note" role="status">Exibindo os 25 motoristas mais recentes. Busque para encontrar os demais.</p>
 <label>Motorista <select name="uid" id="driver-select" required><option value="">Selecione um motorista</option></select></label>
 <label>Valor da parcela mensal (R$) <input name="monthly_amount" type="number" step=".01" min=".01" required placeholder="Ex.: 1500.00"></label>
 <label class="checkbox"><input name="active" type="checkbox" checked> Parcela ativa</label>
