@@ -9,6 +9,7 @@ The CLI defaults to dry-run; no background timer is installed by this module.
 import argparse
 import datetime as dt
 import os
+import ipaddress
 import re
 import secrets
 from urllib.parse import quote, urlparse
@@ -85,8 +86,13 @@ def _public_base():
         return None
     # Avoid sending a localhost or internal development link.
     host=p.hostname.lower()
-    if host in ("localhost","127.0.0.1") or host.endswith((".local",".internal",".test")):
+    if host=="localhost" or host.endswith((".local",".internal",".test")):
         return None
+    try:
+        if ipaddress.ip_address(host).is_private or ipaddress.ip_address(host).is_loopback:
+            return None
+    except ValueError:
+        pass
     return "https://"+host
 
 def _transport_enabled():
@@ -279,7 +285,7 @@ def run_due(instant=None, dry_run=True):
             allowed=bool(_preference(conn,uid)["enabled"] and _gate(conn) and _pilot_chat(conn,uid))
         ok=bool(allowed and _transport_enabled() and send_once(
             uid,chat,event_id,_message(flow,report,link,row["frequency"])))
-        image_ok=bool(ok and send_chart_once(uid,chat,event_id,report))
+        image_ok=bool(ok and send_chart_once(uid,chat,event_id,{**report,"scheduled_total":flow["scheduled_expenses_total_cents"]}))
         status=("sent" if image_ok else "partial" if ok else "failed")
         with db() as conn:
             conn.execute("UPDATE movi_report_deliveries SET status=?,completed_at=? "
