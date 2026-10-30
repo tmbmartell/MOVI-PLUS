@@ -615,3 +615,7 @@ from finance_flow_v1 import router as finance_flow_router
 app.include_router(finance_flow_router)
 from finance_recurring_v1 import router as finance_recurring_router
 app.include_router(finance_recurring_router)
+
+# Opt-in scheduled WhatsApp summaries; admin/env gates OFF by default.
+from finance_auto_report_v1 import router as finance_auto_report_router
+app.include_router(finance_auto_report_router)
