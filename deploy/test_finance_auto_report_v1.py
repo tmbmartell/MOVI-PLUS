@@ -116,8 +116,8 @@ with tempfile.TemporaryDirectory(prefix="movi_auto_report_") as tmp:
     print("05 - signed pilot chat receives one text and chart, no duplicates: PASS")
 
     link=re.search(r"https://movi\.example(/relatorio/[A-Za-z0-9_-]+)",text).group(1)
-    assert client.get(link).status_code==401
     app.app.dependency_overrides.clear()
+    assert client.get(link).status_code==401
     client.cookies.set("clube_session","driver2-token")
     with app.db() as c:
         c.execute("INSERT INTO sessions(hash,uid,expires) VALUES(?,?,?)",
