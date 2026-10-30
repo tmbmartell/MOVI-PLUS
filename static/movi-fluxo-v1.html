@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Meu fluxo financeiro · MOVI+</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#101f29;color:#f7f6ee}
+    *{box-sizing:border-box}body{margin:0;padding:18px 14px 45px}
+    main{max-width:680px;margin:auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 22px;gap:10px}
+    .logo{letter-spacing:.08em;font-weight:800;color:#f6be71;font-size:1.35rem}
+    a{color:#f6be71}h1{font-size:1.5rem;margin:.1rem 0 .4rem}
+    h2{font-size:1.08rem;margin:0 0 14px}.small{color:#bac9cf;font-size:.83rem}
+    .panel{background:#1a3341;border:1px solid #355162;border-radius:16px;padding:18px;margin-bottom:14px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .tile{background:#244250;padding:14px;border-radius:12px;min-width:0}
+    .tile span{display:block;color:#cfdee1;font-size:.76rem;margin-bottom:9px}
+    .tile strong{font-size:clamp(1.05rem,4vw,1.52rem);overflow-wrap:anywhere}
+    .amount{font-size:clamp(1.85rem,7vw,2.6rem);font-weight:800;margin:6px 0;color:#82dbc4}
+    .amount.negative{color:#ffbc9d}
+    .bar{height:10px;background:#355462;border-radius:10px;overflow:hidden;margin:5px 0 15px}
+    .fill{height:100%;background:#ebb76f;width:0;border-radius:10px}
+    .cat{display:flex;gap:10px;justify-content:space-between;align-items:baseline;overflow-wrap:anywhere}
+    .cat .name{flex:1}.cat .value{font-weight:700;white-space:nowrap}
+    .line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #365260}
+    .line:last-child{border-bottom:0}.line strong{text-align:right}
+    .muted{color:#b3c9d3}.note{line-height:1.5;font-size:.82rem;color:#bcced4}
+    .toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    input{background:#244250;color:#fff;border:1px solid #577582;border-radius:8px;padding:10px;font:inherit;max-width:175px}
+    #error{padding:13px;border-radius:10px;background:#583834;color:#ffdcce}
+    [hidden]{display:none!important}
+    @media(max-width:340px){.grid{grid-template-columns:1fr}}
+  </style>
+  <script src="/assets/movi-fluxo-v1.js" defer></script>
+</head>
+<body>
+<main>
+<header><div class="logo">MOVI+</div><a href="/">Voltar ao painel</a></header>
+<h1>Meu dinheiro, com clareza</h1>
+<p class="small">Veja seus lançamentos e os compromissos que informou ao MOVI+.</p>
+<section class="panel toolbar">
+  <label for="month">Escolher mês</label><input type="month" id="month">
+  <span class="small" id="period"></span>
+</section>
+<div id="error" role="alert" hidden></div>
+<div id="content" hidden>
+<section class="grid" aria-label="Resumo do mês">
+  <div class="tile"><span>Ganhos registrados</span><strong id="income"></strong></div>
+  <div class="tile"><span>Despesas registradas</span><strong id="expense"></strong></div>
+</section>
+<section class="panel" style="margin-top:14px"><div class="small">Resultado dos registros no mês</div><div class="amount" id="result"></div><p class="small" id="result-note"></p></section>
+<section class="panel"><h2>Para onde foi seu dinheiro</h2><div id="categories"></div></section>
+<section class="panel"><h2>Compromissos mensais informados</h2><p class="small">Parcelas recorrentes declaradas no cadastro; não significam pagamento e podem já aparecer nos gastos acima.</p><div id="recurring"></div><div class="line"><span>Valor mensal informado</span><strong id="recurring-total"></strong></div></section>
+<section class="panel"><h2>Outras estimativas do cadastro</h2><div id="estimates"></div></section>
+<section class="panel"><p class="note" id="notice"></p><p class="note" id="pending"></p></section>
+</div>
+</main>
+</body>
+</html>
