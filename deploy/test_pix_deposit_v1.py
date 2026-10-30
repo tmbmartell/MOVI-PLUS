@@ -49,6 +49,9 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     assert client.get("/api/admin/pix").json()["key"]=="30676596000105"
     assert client.put("/api/admin/pix",json={**form,"enabled":True},headers=h).status_code in (409,422)
     assert client.put("/api/admin/pix",json={**form,"recipient_name":"Recebedor Teste","enabled":True},headers=h).status_code==409
+    # Any change in recipient or key requires a separate saved-but-disabled step.
+    assert client.put("/api/admin/pix",json={**form,"recipient_name":"Recebedor Teste","bank_verified":True,"enabled":True},headers=h).status_code==409
+    assert client.put("/api/admin/pix",json={**form,"recipient_name":"Recebedor Teste"},headers=h).status_code==200
     assert client.put("/api/admin/pix",json={**form,"recipient_name":"Recebedor Teste","bank_verified":True,"enabled":True},headers=h).status_code==200
     assert client.put("/api/admin/pix/driver/2",json={"monthly_amount":"1500.00","active":True},headers=h).status_code==200
     assert client.get("/gestao/pix").status_code==200
