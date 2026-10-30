@@ -14,7 +14,7 @@ from app import db,driver,auth,audit,now,consent
 router=APIRouter()
 
 # Mudou o texto ou as finalidades? Aumente a versão: todos os motoristas aceitam de novo (art. 8º §6º).
-VERSION="2026-10-26.2"
+VERSION="2026-10-30.1"
 
 # Identificação do controlador e do encarregado (arts. 9º III-IV e 41 §1º). Trocar os marcadores.
 CONTROLLER={
@@ -37,14 +37,14 @@ REQUIRED=[
  ("terms","Li e aceito os Termos de Uso do MOVI+."),
  ("privacy","Li a Política de Privacidade e entendi quais dados são usados, para quê e quais são os meus direitos."),
  ("cookies","Estou ciente de que o MOVI+ usa só um cookie, necessário para manter meu login."),
- ("analytics","Permito que meus dados sejam usados para análises e aprimoramento do sistema MOVI+, de forma agregada, sem divulgar quem eu sou."),
+ ("analytics","Li que o MOVI+ realiza análises e aprimoramento do serviço com dados agregados, conforme a Política de Privacidade, e entendi como exercer meu direito de oposição."),
  ("adult","Tenho 18 anos ou mais."),
  ("money","Entendo que o MOVI+ não movimenta meu dinheiro, não acessa minha conta no banco e não é consultoria financeira profissional."),
  ("truth","As informações que eu colocar serão verdadeiras, e meu acesso é pessoal: não vou passar minha senha para ninguém."),
 ]
 # Itens opcionais: consentimento livre, específico e destacado. Chaves iguais à tabela consents.
 OPTIONAL=[
- ("marketing","Receber propostas e ofertas novas do MOVI+ dentro do aplicativo. Já vem ligado; você pode desligar quando quiser em Privacidade."),
+ ("marketing","Quero receber propostas e ofertas do MOVI+ dentro do aplicativo. Esta escolha começa desativada e pode ser revogada em Privacidade."),
  ("assisted_entry","O gestor pode ver e preencher o meu cadastro por mim (ele vê minhas respostas e meus totais de ganhos e gastos)."),
  ("insights","Permito que o gestor veja o meu cadastro e os meus totais de ganhos e gastos."),
  ("sharing","Permito que o sistema MOVI+ compartilhe minhas informações de cadastro com os parceiros listados na Política de Privacidade, para "+PARTNERS_PURPOSE+"."),
@@ -52,9 +52,8 @@ OPTIONAL=[
  ("documents","Permito que o gestor consulte os documentos que eu enviar, quando isso estiver liberado."),
 ]
 CONSENT_KEYS=("insights","marketing","sharing","documents","assisted_entry","identity_collection")
-# Ofertas do próprio MOVI+ no app: legítimo interesse (art. 7º IX), ligado por padrão e com
-# oposição a qualquer momento (art. 18 §2º). Não vale para parceiros, que seguem por consentimento.
-DEFAULT_ON=("marketing",)
+# Ofertas de marketing são opt-in específico; nunca pré-selecionadas. Histórico registra a escolha.
+DEFAULT_ON=()
 # Consentimento não pode vir pré-marcado (art. 5º XII): o motorista precisa responder Sim ou Não.
 MUST_ANSWER=("assisted_entry",)
 
@@ -77,7 +76,7 @@ def _sections():
  {"id":"privacidade","title":"Política de Privacidade","parts":[
   ("1. Quem cuida dos seus dados","Controlador: "+c["name"]+", CNPJ "+c["cnpj"]+", "+c["address"]+". Contato: "+c["contact"]+". Encarregado pelo tratamento de dados pessoais: "+c["dpo_name"]+", e-mail "+c["dpo_email"]+"."),
   ("2. Quais dados usamos","(a) Conta: nome, usuário e senha (a senha fica guardada de forma que nem nós conseguimos ler). (b) Anotações: ganhos, gastos, datas e observações que você colocar. (c) Cadastro: respostas sobre trabalho, renda, bancos, carro e metas. (d) Dados pessoais e documentos, só se você permitir: nome completo, CPF, RG, nascimento, e-mail, endereço, celular, placa e CNH. (e) Conversas com o assistente e, se você ligar, fotos e áudios enviados. (f) Registros de acesso: data, hora e endereço IP de cada acesso, e o cookie de login."),
-  ("3. Para que usamos e com qual base legal","Para criar e manter sua conta e mostrar suas anotações e totais: execução do contrato (LGPD art. 7º, V). Para segurança, prevenção de fraude e para analisar e melhorar o sistema com dados agregados, sem divulgar quem você é: legítimo interesse (art. 7º, IX); você pode se opor, falando com o encarregado. Para guardar registros de acesso por 6 meses: obrigação legal (Marco Civil da Internet, art. 15). Para mostrar ofertas e propostas do próprio MOVI+ dentro do aplicativo: legítimo interesse (art. 7º, IX); essa opção já vem ligada e você pode desligar quando quiser em Mais › Privacidade. Para o gestor ver ou preencher seu cadastro, para compartilhar com parceiros, para guardar dados pessoais e documentos e para ler fotos e áudios: só com o seu consentimento (art. 7º, I), que você pode retirar quando quiser."),
+  ("3. Para que usamos e com qual base legal","Para criar e manter sua conta e mostrar suas anotações e totais: execução do contrato (LGPD art. 7º, V). Para segurança, prevenção de fraude e para analisar e melhorar o sistema com dados agregados, sem divulgar quem você é: legítimo interesse (art. 7º, IX); você pode se opor, falando com o encarregado. Para guardar registros de acesso por 6 meses: obrigação legal (Marco Civil da Internet, art. 15). Para mostrar ofertas e propostas do próprio MOVI+ dentro do aplicativo: somente com sua autorização opcional (LGPD art. 7º, I), desativada inicialmente e revogável em Mais › Privacidade. Para o gestor ver ou preencher seu cadastro, para compartilhar com parceiros, para guardar dados pessoais e documentos e para ler fotos e áudios: só com o seu consentimento (art. 7º, I), que você pode retirar quando quiser."),
   ("4. Com quem compartilhamos","(a) Gestor do Clube: vê seus números e seu cadastro só se você permitir. (b) Parceiros: só se você permitir. Parceiros: "+PARTNERS+". Finalidade: "+PARTNERS_PURPOSE+". (c) Serviço de inteligência artificial DeepSeek: recebe fotos e textos só quando você liga a leitura de fotos e áudios, o que pode envolver envio dos dados para fora do Brasil; por isso pedimos esse consentimento em destaque, na hora (art. 33, VIII). (d) Empresas que nos prestam serviço, como hospedagem ("+c["hosting"]+"), seguindo nossas instruções. (e) Autoridades, quando a lei ou um juiz exigir. Não vendemos seus dados."),
   ("5. Por quanto tempo guardamos","Enquanto sua conta existir. Se você pedir para apagar, apagamos do sistema, salvo o que a lei manda guardar (como os registros de acesso por 6 meses). Cópias de segurança são apagadas em até "+c["backup_days"]+" dias."),
   ("6. Como protegemos","Senhas guardadas com proteção forte, dados de cadastro e documentos criptografados, acesso separado por pessoa e registro de ações sensíveis. Nenhum sistema é 100% seguro: se acontecer um incidente que possa causar risco ou dano relevante, avisaremos você e a ANPD."),
