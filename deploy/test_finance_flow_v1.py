@@ -66,4 +66,19 @@ with tempfile.TemporaryDirectory(prefix="movi_flow_test_") as directory:
     app.app.dependency_overrides.clear()
     print("04 - responsive page only after authentication: PASS")
 
-print("4/4 isolated flow report tests passed. No real user data and no WAHA sends.")
+    with app.db() as c:
+        c.execute(
+            "INSERT INTO users(id,username,phash,role,status,name,created_at,must_change) VALUES(?,?,?,?,?,?,?,0)",
+            (1, "admin_test", "test", "admin", "active", "Fake admin", app.now())
+        )
+        c.execute(
+            "INSERT INTO sessions(hash,uid,expires) VALUES(?,?,?)",
+            (app.sha("admin-test-token"), 1, app.stamp() + 3600)
+        )
+        c.commit()
+    client.cookies.set("clube_session", "admin-test-token", secure=True)
+    assert client.get("/api/finance/flow").status_code == 403
+    assert client.get("/meu-fluxo").status_code == 403
+    print("05 - administrator cannot open a driver's private statement: PASS")
+
+print("5/5 isolated flow report tests passed. No real user data and no WAHA sends.")
