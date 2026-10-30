@@ -46,6 +46,13 @@ def init():
             monthly_cents INTEGER NOT NULL CHECK(monthly_cents>0),
             active INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS movi_pix_installment_month(
+            uid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            month TEXT NOT NULL,
+            monthly_cents INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY(uid,month)
+        );
         CREATE TABLE IF NOT EXISTS movi_pix_notice_consent(
             uid INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
             enabled INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL
@@ -102,7 +109,15 @@ def _item(c,uid,day):
         raise HTTPException(403,"Motorista não está ativo")
     rec=c.execute("SELECT monthly_cents FROM movi_pix_installment WHERE uid=? AND active=1",(uid,)).fetchone()
     if not rec:raise HTTPException(409,"Parcela deste motorista ainda não configurada")
-    plan=month_plan(day.strftime("%Y-%m"),rec["monthly_cents"])
+    month=day.strftime("%Y-%m")
+    # Freeze the installment for the first month request: later plan changes do
+    # not silently rewrite a previously delivered daily Pix amount.
+    c.execute("INSERT OR IGNORE INTO movi_pix_installment_month(uid,month,monthly_cents,created_at) "
+              "VALUES(?,?,?,?)",(uid,month,rec["monthly_cents"],now()))
+    locked=c.execute("SELECT monthly_cents FROM movi_pix_installment_month WHERE uid=? AND month=?",
+                     (uid,month)).fetchone()
+    c.commit()
+    plan=month_plan(month,locked["monthly_cents"])
     return receiver,plan["days"][day.day-1]
 
 def message_for_slot(key,day,slot,amount):
@@ -287,10 +302,9 @@ def run_notice(instant=None,dry_run=True):
             receiver,item=_item(c,uid,day)
             amount=next(x["amount_cents"] for x in item["slots"] if x["slot"]==slot)
             # No duplicate attempts, including when WAHA response is ambiguous.
-            if c.execute("SELECT 1 FROM movi_pix_notice_outbox WHERE uid=? AND entry_day=? AND slot=?",
-                         (uid,day.isoformat(),slot)).fetchone():continue
-            c.execute("INSERT INTO movi_pix_notice_outbox(uid,entry_day,slot,status,created_at)"
+            inserted=c.execute("INSERT OR IGNORE INTO movi_pix_notice_outbox(uid,entry_day,slot,status,created_at)"
                       "VALUES(?,?,?,'attempted',?)",(uid,day.isoformat(),slot,now()))
+            if inserted.rowcount!=1:continue
             c.commit()
         from finance_agent_pilot_v1 import send_once
         sent=send_once(uid,chat,"movi-pix-"+str(uid)+"-"+day.isoformat()+"-"+slot,
@@ -301,3 +315,11 @@ def run_notice(instant=None,dry_run=True):
             audit(c,uid,"pix:notice","sent" if sent else "failed");c.commit()
         count+=int(bool(sent))
     return {"due":len(eligible),"sent":count,"dry_run":False}
+
+
+if __name__=="__main__":
+    import argparse
+    parser=argparse.ArgumentParser(description="MOVI+ Pix reminder pilot (dry-run by default)")
+    parser.add_argument("--send",action="store_true",help="Send only if opt-in, verified key, single-pilot and environment gate allow")
+    args=parser.parse_args()
+    print(run_notice(dry_run=not args.send))
