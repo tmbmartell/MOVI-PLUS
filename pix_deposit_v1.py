@@ -16,7 +16,7 @@ from finance_deposit_planner_v1 import month_plan, SLOTS
 router=APIRouter()
 TZ=ZoneInfo("America/Porto_Velho")
 DAY_RE=re.compile(r"^20\d{2}-(0[1-9]|1[0-2])-([0-3]\d)$")
-SLOT_HOURS={"manha":9,"tarde":14,"noite":19}
+DEFAULT_SLOT_HOURS={"manha":9,"tarde":14,"noite":19}
 NOTICE_ENV="MOVI_PIX_REMINDERS_ENABLED"
 
 def pix_cnpj(key):
@@ -53,6 +53,13 @@ def init():
             created_at TEXT NOT NULL,
             PRIMARY KEY(uid,month)
         );
+        CREATE TABLE IF NOT EXISTS movi_pix_notice_schedule(
+            id INTEGER PRIMARY KEY CHECK(id=1),
+            morning_hour INTEGER NOT NULL DEFAULT 9,
+            afternoon_hour INTEGER NOT NULL DEFAULT 14,
+            evening_hour INTEGER NOT NULL DEFAULT 19,
+            updated_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS movi_pix_notice_consent(
             uid INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
             enabled INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL
@@ -84,6 +91,38 @@ def _receiver(c):
     return {"key":obj["key"],"recipient_name":obj.get("recipient_name",""),
             "enabled":bool(r["enabled"]),"bank_verified":bool(r["bank_verified"]),
             "updated_at":r["updated_at"]}
+
+def _notice_hours(c):
+    row=c.execute("SELECT morning_hour,afternoon_hour,evening_hour FROM movi_pix_notice_schedule WHERE id=1").fetchone()
+    return dict(zip(SLOTS,(row["morning_hour"],row["afternoon_hour"],row["evening_hour"]))) if row else dict(DEFAULT_SLOT_HOURS)
+
+@router.get("/api/admin/pix/schedule")
+def get_notice_schedule(u=Depends(admin)):
+    with db() as c:
+        hours=_notice_hours(c)
+    return {"hours":hours,"timezone":"America/Porto_Velho",
+            "delivery_active":os.environ.get(NOTICE_ENV)=="1",
+            "notice":"Os horários programam lembretes; não ativam o WhatsApp."}
+
+@router.put("/api/admin/pix/schedule")
+def set_notice_schedule(data:dict,u=Depends(admin)):
+    if not isinstance(data,dict) or set(data)!=set(SLOTS):
+        raise HTTPException(422,"Informe manhã, tarde e noite")
+    if any(type(data[slot]) is not int for slot in SLOTS):
+        raise HTTPException(422,"Horários devem ser horas inteiras")
+    morning,afternoon,evening=(data[s] for s in SLOTS)
+    if not (6<=morning<=11 and 12<=afternoon<=17 and 18<=evening<=22):
+        raise HTTPException(422,"Manhã 6–11h, tarde 12–17h e noite 18–22h")
+    with db() as c:
+        c.execute("INSERT INTO movi_pix_notice_schedule(id,morning_hour,afternoon_hour,evening_hour,updated_at)"
+                  "VALUES(1,?,?,?,?) ON CONFLICT(id) DO UPDATE SET "
+                  "morning_hour=excluded.morning_hour,afternoon_hour=excluded.afternoon_hour,"
+                  "evening_hour=excluded.evening_hour,updated_at=excluded.updated_at",
+                  (morning,afternoon,evening,now()))
+        audit(c,u["id"],"pix:notice_schedule","updated")
+        c.commit()
+    return {"ok":True,"hours":{s:data[s] for s in SLOTS},
+            "delivery_activated":False}
 
 def _money(raw):
     amount=cents(raw)
@@ -120,7 +159,7 @@ def _item(c,uid,day):
     plan=month_plan(month,locked["monthly_cents"])
     return receiver,plan["days"][day.day-1]
 
-def message_for_slot(key,day,slot,amount):
+def message_for_slot(key,day,slot,amount,recipient_name=""):
     """Explicit copyable key, not QR or an assertion that any bank transfer succeeded."""
     label={"manha":"manhã","tarde":"tarde","noite":"noite"}[slot]
     return (
@@ -128,6 +167,7 @@ def message_for_slot(key,day,slot,amount):
       "Data: "+day+"\n"
       "Valor programado: "+_money_text(amount)+"\n"
       "Chave Pix CNPJ do recebedor: "+key+"\n"
+      "Favorecido informado pelo Clube: "+(recipient_name or "consulte o gestor")+"\n"
       "Antes de pagar, confira no seu banco o nome do titular da conta.\n"
       "Depois, informe o pagamento pelo MOVI+. A declaração não confirma recebimento bancário."
     )
@@ -211,7 +251,7 @@ def driver_day(date:str="",u=Depends(driver)):
       "pix_key":receiver["key"],"pix_key_type":"CNPJ",
       "recipient_name_configured":receiver["recipient_name"],
       "slots":[{**slot,"declared_by_driver":slot["slot"] in declared,
-                "message":message_for_slot(receiver["key"],target.isoformat(),slot["slot"],slot["amount_cents"])}
+                "message":message_for_slot(receiver["key"],target.isoformat(),slot["slot"],slot["amount_cents"],receiver["recipient_name"])}
                for slot in day["slots"]],
       "notice":"Motorista declara depósito; apenas comprovante do banco confirma recebimento."}
 
@@ -277,10 +317,10 @@ def admin_page(u=Depends(admin)):
 def run_notice(instant=None,dry_run=True):
     instant=instant or dt.datetime.now(dt.timezone.utc)
     local=instant.astimezone(TZ)
-    slot=next((s for s,h in SLOT_HOURS.items() if h==local.hour),None)
-    if not slot:return {"due":0,"sent":0,"dry_run":dry_run}
     day=local.date()
     with db() as c:
+        slot=next((s for s,h in _notice_hours(c).items() if h==local.hour),None)
+        if not slot:return {"due":0,"sent":0,"dry_run":dry_run}
         ready=_receiver(c)
         eligible=[r["uid"] for r in c.execute(
             "SELECT i.uid FROM movi_pix_installment i "
@@ -313,7 +353,7 @@ def run_notice(instant=None,dry_run=True):
             c.commit()
         from finance_agent_pilot_v1 import send_once
         sent=send_once(uid,chat,"movi-pix-"+str(uid)+"-"+day.isoformat()+"-"+slot,
-           message_for_slot(receiver["key"],day.isoformat(),slot,amount))
+           message_for_slot(receiver["key"],day.isoformat(),slot,amount,receiver["recipient_name"]))
         with db() as c:
             c.execute("UPDATE movi_pix_notice_outbox SET status=? WHERE uid=? AND entry_day=? AND slot=?",
                 ("sent" if sent else "failed",uid,day.isoformat(),slot))
