@@ -217,13 +217,13 @@ def bridge_refresh_qr(u=Depends(admin)):
 @router.post("/api/admin/whatsapp-bridge/request-code")
 def bridge_request_pairing_code(data:dict,u=Depends(admin)):
  """Phone pairing fallback, with no phone or pairing code persistence or logging."""
- throttle(u["id"],"request_code",30)
  if not isinstance(data,dict) or set(data)!={"phone_number"}:
   raise HTTPException(422,"Informe apenas o telefone para vincular.")
  raw=data.get("phone_number")
  if not isinstance(raw,str) or not re.fullmatch(r"\+?[0-9]{10,15}",raw.strip()):
   raise HTTPException(422,"Informe DDI, DDD e telefone, somente números.")
  phone=raw.strip().lstrip("+")
+ throttle(u["id"],"request_code",30)
  cfg,state=_unpaired_conf()
  if state["status"]!="SCAN_QR_CODE":
   raise HTTPException(409,"Aguarde a sessão indicar SCAN_QR_CODE antes de pedir código.")
