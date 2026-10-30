@@ -6,13 +6,14 @@ No bank credentials, full references, or statements are stored.
 """
 import datetime as dt
 import hashlib
+import hmac
 import re
 import sqlite3
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app import admin, driver, db, audit, now, cents
+from app import admin, driver, db, audit, now, cents, KEY
 from pix_deposit_v1 import _date
 
 router = APIRouter()
@@ -39,7 +40,8 @@ def init():
 init()
 
 def _ref_hash(reference):
-    return hashlib.sha256(("movi_pix_manual_ref_v1|"+reference.upper()).encode()).hexdigest()
+    # Keyed digest prevents offline guessing of short bank reference values if DB leaks.
+    return hmac.new(KEY.read_bytes(),("movi_pix_manual_ref_v1|"+reference.upper()).encode(),hashlib.sha256).hexdigest()
 
 def _safe_amount(value):
     try: amount=cents(value)
