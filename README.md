@@ -24,6 +24,7 @@ Aplicativo de gestão financeira e acompanhamento do Clube do Motorista. Base at
 - Termos legais no `legal_v8.py` contêm campos entre colchetes até que a pessoa jurídica responsável confirme as informações. Revisão jurídica ainda é mandatória.
 - **Sem hostname público estável, sem liberação de MFA em todas as contas administrativas, sem prova de backup externo/restore e sem teste de celular e WAHA reais, não publicar.**
 - **Decisão atual:** depósitos via **chave Pix CNPJ direta**, sem gateway Pag.me. A chave é configurada no painel do gestor e armazenada criptografada, com verificação do titular exigida antes de liberar. O MOVI+ envia instruções, não faz Pix nem confirma crédito bancário; a conciliação segue manual até existir integração bancária autenticada.
+- **Conferência manual já desenvolvida:** gestor registra crédito confirmado após consulta ao extrato, ou divergência; histórico auditável, referência bancária apenas em hash, acesso individual e testes 7/7. **Não constitui conciliação automática e não representa pagamento realmente confirmado sem extrato.**
 
 ## Documentação
 - [Organograma e arquitetura](docs/arquitetura/ORGANOGRAMA.md)
