@@ -54,7 +54,9 @@ with tempfile.TemporaryDirectory(prefix="movi_flow_test_") as directory:
     print("02 - real totals, category split, declarations not double-counted, account isolation: PASS")
 
     older = client.get("/api/finance/flow?month=2026-09").json()
-    assert older["has_data"] is False and older["income_cents"] == 0
+    assert older["has_data"] is True and older["income_cents"] == 15000
+    empty_month = client.get("/api/finance/flow?month=2026-08").json()
+    assert empty_month["has_data"] is False and empty_month["income_cents"] == 0
     for bad in ("2026-13", "x", "2026/10", "2026-00"):
         assert client.get("/api/finance/flow?month=" + bad).status_code == 422
     print("03 - month filter, empty month and invalid input: PASS")
