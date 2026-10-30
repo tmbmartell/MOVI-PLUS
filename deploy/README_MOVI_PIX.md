@@ -35,3 +35,8 @@
 
 ## Titular e chave
 O operador informou nome do recebedor e chave CNPJ. Foram armazenados **criptografados em banco de QA isolado na VPS**, com aprovação bancária e disponibilização ao motorista **desligadas**. Dados reais não entram em arquivos do repositório público. Para ativar, é obrigatório confirmar que o próprio aplicativo bancário mostra o mesmo favorecido.
+
+## Consulta de grande volume (em homologação)
+- O gestor pode filtrar a conferência de depósitos por **mês** e **situação**, avançar/voltar pelas páginas de 50 registros e consultar totais correspondentes a todo o filtro, não só à página exibida. O limite anterior de 300 registros foi eliminado.
+- Para associar uma parcela a um motorista, pesquise pelo **nome**, **usuário** ou **ID**. O resultado é limitado a 25 nomes por busca para evitar uma lista gigantesca. Testado com **4.000 motoristas fictícios**.
+- Testes específicos: `deploy/test_pix_reconciliation_v1.py` 8/8 e `deploy/test_pix_driver_search_v1.py` 4/4. Não substituem testes de carga com 4.000 pessoas simultâneas.
