@@ -16,9 +16,10 @@ from urllib.parse import urlparse
 
 REQUIRED_CODE = (
     "app.py", "legal_v8.py", "finance_flow_v1.py",
-    "finance_recurring_v1.py", "finance_auto_report_v1.py",
+    "finance_recurring_v1.py", "finance_auto_report_v1.py", "pix_deposit_v1.py",
     "static/driver-v8.js", "static/gestor-v8.js",
     "static/movi-fluxo-v1.html", "static/movi-auto-report-v1.js",
+    "static/movi-pix-v1.html", "static/movi-pix-admin-v1.html",
     "deploy/novagente-movi-report.service", "deploy/novagente-movi-report.timer",
 )
 
@@ -105,7 +106,7 @@ def run(root,data,environ=None):
     add("waha_roundtrip","verify","Vínculo, ida/volta e imagem WhatsApp real requerem piloto autorizado.")
     add("admin_mfa","verify","Ativação de MFA para contas administrativas reais requer verificação sem expor códigos.")
     add("offsite_backup_restore","verify","Backup criptografado fora da VPS e restauração de teste não comprovados.")
-    add("pix_conciliation","block","Pag.me/Pix real ainda requer contrato, credenciais, webhook e homologação financeira.")
+    add("pix_conciliation","block","Instruções via chave Pix estão implementadas, mas crédito bancário/conciliação real não é verificado; exige conferência do extrato ou integração autenticada.")
     add("security_load_test","verify","Pentest, teste de carga e auditoria de segredos do GitHub pendentes.")
     add("repository_private_status","verify","Visibilidade pública/privada e histórico de segredos exigem revisão.")
     add("sqlite_integrity",**check_db(data))
