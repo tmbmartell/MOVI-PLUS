@@ -21,3 +21,17 @@
 `deploy/test_pix_deposit_v1.py`: valida CNPJ, criptografia do registro, três mensagens com chave, separação entre clientes, depósito declarado, revogação, envio simulado idempotente, e revogação após alteração da chave.
 
 **Regra de negócio:** solicitar um Pix por chave é **instrução para transferência** e não uma operação bancária. A ativação real exige confirmação do recebedor e homologação jurídica e operacional.
+
+
+## Conferência manual do recebimento (implementada na versão candidata)
+- O motorista declara um turno em `/meu-pix`. O sistema registra **declarado**, sem marcar como recebido.
+- O gestor acessa `/gestao/pix` > **Conferência manual dos depósitos**, confere o valor e a data no **extrato bancário real** e informa um identificador único da transação.
+- Apenas o gestor autenticado registra **confirmado manualmente** após afirmar ter consultado o extrato. Valor divergente não pode ser confirmado silenciosamente: deve ser marcado como **divergência** e analisado.
+- Um mesmo identificador não pode ser usado para confirmar duas declarações. O identificador é armazenado **somente como hash**, sem cópia do extrato, e a confirmação entra na auditoria.
+- O motorista pode consultar sua própria situação: **pendente**, **confirmado manualmente** ou **divergência**. Uma confirmação é imutável neste piloto; retificações/estornos requerem procedimento próprio antes de produção.
+- A rotina de aviso **não envia novo lembrete** para o turno que o motorista já declarou pago, mesmo que ainda esteja em análise.
+- Testes: `deploy/test_pix_reconciliation_v1.py` (**7/7**) e `deploy/test_pix_deposit_v1.py` (**11/11**), todos com dados fictícios.
+- **Limite:** o teste verifica lógica de revisão e auditoria, **não prova a existência de depósitos reais** nem confirma automaticamente um crédito no banco.
+
+## Titular e chave
+O operador informou nome do recebedor e chave CNPJ. Foram armazenados **criptografados em banco de QA isolado na VPS**, com aprovação bancária e disponibilização ao motorista **desligadas**. Dados reais não entram em arquivos do repositório público. Para ativar, é obrigatório confirmar que o próprio aplicativo bancário mostra o mesmo favorecido.
