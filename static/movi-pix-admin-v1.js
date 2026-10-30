@@ -22,13 +22,13 @@ const currentDay=()=>{
  return parts.year+"-"+parts.month+"-"+parts.day;
 };
 function reviewPanel(x){
- const section=elem("div","panel");
+ const section=elem("details","review-item");
  const state=x.review_state||"pending";
  const statuses={pending:"Aguardando conferência","confirmed_manual":"Confirmado manualmente no extrato",
     unmatched:"Divergência / não localizado"};
- section.append(elem("p","note",
-   "#"+x.id+" · "+x.entry_day+" · "+x.name+" · "+x.slot+" · "+brl(x.expected_cents)),
-   elem("p","note","Situação: "+(statuses[state]||state)));
+ section.append(elem("summary","",
+   "#"+x.id+" · "+x.entry_day+" · "+x.name+" · "+x.slot+" · "+brl(x.expected_cents)+
+   " · "+(statuses[state]||state)));
  if(state==="confirmed_manual")return section;
  const form=elem("form","review-form");
  const decision=elem("select");decision.name="decision";
