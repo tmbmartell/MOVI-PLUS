@@ -18,7 +18,7 @@ hr{border:0;border-top:1px solid #44606c;margin:20px 0}
 .review-form button{grid-column:1/-1}
 @media(max-width:620px){.review-form{grid-template-columns:1fr}}
 
-</style><script src="/assets/movi-pix-admin-v1.js" defer></script></head>
+.review-pages{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px}.review-pages button{width:auto;flex:1;max-width:145px}.review-pages button:disabled{opacity:.4;cursor:not-allowed}.review-form .actions{display:flex;gap:8px;grid-column:1 / -1}.review-form .actions button{min-width:0}@media(max-width:620px){.review-form .actions{flex-direction:column}}</style><script src="/assets/movi-pix-admin-v1.js" defer></script></head>
 <body><main><header><span class="brand">MOVI+ · GESTÃO</span><a href="/">Voltar ao painel</a></header>
 <h1>Depósitos via Pix</h1><p class="note">Uma chave centralizada, valores individuais por motorista e três turnos por dia. O MOVI+ envia apenas instruções e registra declarações — não movimenta recursos nem verifica o recebimento no banco.</p>
 <section><h2>1. Chave Pix do recebedor</h2><form id="receiver-form">
@@ -38,5 +38,12 @@ hr{border:0;border-top:1px solid #44606c;margin:20px 0}
 <label>Valor da parcela mensal (R$) <input name="monthly_amount" type="number" step=".01" min=".01" required placeholder="Ex.: 1500.00"></label>
 <label class="checkbox"><input name="active" type="checkbox" checked> Parcela ativa</label>
 <button type="submit">Salvar parcela</button></form><p class="status" id="driver-status" role="status"></p><p class="note">Os valores diários são calculados para 28, 29, 30 ou 31 dias sem exceder a parcela do mês.</p></section>
-<section><h2>4. Conferência manual dos depósitos</h2><p class="note">Cada motorista pode informar que pagou. Para confirmar, confira no extrato bancário o valor, a data e a referência única da transferência. O MOVI+ não acessa contas bancárias.</p><p class="status" id="review-status" role="status"></p><div id="declared-list">Nenhuma declaração registrada.</div></section>
+<section><h2>4. Conferência manual dos depósitos</h2><p class="note">Cada motorista pode informar que pagou. Para confirmar, confira no extrato bancário o valor, a data e a referência única da transferência. O MOVI+ não acessa contas bancárias.</p>
+<form id="review-filters" class="review-form" style="margin:14px 0">
+<label>Mês <input id="review-month" type="month"></label>
+<label>Situação <select id="review-state"><option value="">Todas</option><option value="pending">Aguardando conferência</option><option value="unmatched">Divergência</option><option value="confirmed_manual">Confirmado manualmente</option></select></label>
+<div class="actions"><button type="submit">Filtrar depósitos</button><button type="button" id="review-clear">Limpar filtros</button></div>
+</form>
+<p class="status" id="review-status" role="status"></p><div id="declared-list">Nenhuma declaração registrada.</div>
+<div class="review-pages"><button id="review-prev" type="button">Anterior</button><span id="review-pagination" class="note">Página 1</span><button id="review-next" type="button">Próxima</button></div></section>
 </main></body></html>
