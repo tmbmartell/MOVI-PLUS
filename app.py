@@ -180,6 +180,8 @@ def validate_value(k,v,allow_identity=False):
  if f[5] and not allow_identity:
   raise HTTPException(403,"Autorize o cadastro dos dados de identificação em Autorizações antes de preenchê-los.")
  if typ=="file":raise HTTPException(422,"Use a área de documentos")
+ if k=="vehicle_plate" and (v is None or str(v).strip()==""):
+  raise HTTPException(422,"Placa obrigatória nesta etapa do cadastro")
  if v is None or v=="":return ""
  if typ=="multi":
   if not isinstance(v,list) or len(v)>len(f[4]) or any(x not in f[4] for x in v):raise HTTPException(422,"Seleção múltipla inválida")
@@ -198,6 +200,11 @@ def validate_value(k,v,allow_identity=False):
  if typ=="cpf" and not re.fullmatch(r"\d{11}",re.sub(r"\D","",s)):raise HTTPException(422,"CPF inválido")
  if typ=="email" and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+",s):raise HTTPException(422,"E-mail inválido")
  if typ=="phone" and not re.fullmatch(r"\+?[0-9 ()-]{10,24}",s):raise HTTPException(422,"Telefone inválido")
+ if k=="vehicle_plate":
+  plate=s.upper().replace("-","")
+  if not re.fullmatch(r"[A-Z]{3}\d(?:\d{3}|[A-Z]\d{2})",plate):
+   raise HTTPException(422,"Placa inválida. Use ABC1234 ou ABC1D23")
+  return plate
  return s
 @app.get("/api/schema")
 def schema(u=Depends(auth)):
@@ -231,7 +238,7 @@ def next_field(p,authorized=False):
  skipped=set(p.get("_skipped",[]))
  for f in active_fields(p):
   if f[2]=="file" or f[5] and not authorized:continue
-  if p.get(f[0]) in (None,"",[]) and f[0] not in skipped:return describe(f)
+  if p.get(f[0]) in (None,"",[]) and (f[0]=="vehicle_plate" or f[0] not in skipped):return describe(f)
  return None
 @app.get("/api/profile/next")
 def next_question(u=Depends(driver)):
@@ -246,6 +253,7 @@ def answer_question(data:dict,u=Depends(driver)):
   if not f:return {"ok":True,"done":True}
   if data.get("key")!=f["key"]:raise HTTPException(409,"Pergunta alterada, recarregue")
   if data.get("skip") is True:
+   if f["key"]=="vehicle_plate":raise HTTPException(422,"Informe a placa para concluir esta etapa do cadastro")
    skipped=set(p.get("_skipped",[]));skipped.add(f["key"]);p["_skipped"]=list(skipped)
   else:p[f["key"]]=validate_value(f["key"],data.get("value"),authorized)
   save_profile(c,u["id"],p);audit(c,u["id"],"interview:answer",f["key"]);c.commit()
