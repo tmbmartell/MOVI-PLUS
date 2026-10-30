@@ -81,8 +81,12 @@ def _public_base():
     raw=os.getenv(BASE_URL_ENV,"").strip()
     if not raw:return None
     p=urlparse(raw)
+    try:
+        port=p.port
+    except ValueError:
+        return None
     if (p.scheme!="https" or not p.hostname or p.username or p.password or p.query
-        or p.fragment or p.path not in ("","/") or p.port not in (None,443)):
+        or p.fragment or p.path not in ("","/") or port not in (None,443)):
         return None
     # Avoid sending a localhost or internal development link.
     host=p.hostname.lower()
