@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix="movi_preflight_") as temp:
     # Source assets, not a real deployment.
     for relative in (
         "app.py","legal_v8.py","finance_flow_v1.py","finance_recurring_v1.py",
-        "finance_auto_report_v1.py","pix_deposit_v1.py","static/driver-v8.js","static/gestor-v8.js",
+        "finance_auto_report_v1.py","pix_deposit_v1.py","pix_reconciliation_v1.py","static/driver-v8.js","static/gestor-v8.js",
         "static/movi-fluxo-v1.html","static/movi-auto-report-v1.js",
         "static/movi-pix-v1.html","static/movi-pix-admin-v1.html",
         "deploy/novagente-movi-report.service","deploy/novagente-movi-report.timer",
