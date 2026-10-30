@@ -10,6 +10,7 @@ Aplicativo de gestão financeira e acompanhamento do Clube do Motorista. Base at
 - **PR #2** — página de fluxo financeiro e cadastro de despesas recorrentes.
 - **PR #4** — integração da V8 aos módulos financeiros.
 - **PR #5** — entrega automática opcional de relatório financeiro WhatsApp, link de acesso individual e timer **desligado por padrão**.
+- **PR #6 (candidato único)** — versão integrada para revisão contra `main`, reunindo V8, financeiro, relatórios, projeção de depósitos e testes revisados. **Draft, NÃO implantado.**
 - **Issue #3** — única lista de marcos e percentual. **6/12 = 50% de desenvolvimento/marcos verificados**, não de habilitação da produção.
 
 **Sequência:** as PRs estão encadeadas. **Não mesclar #1, #2, #4 e #5 independentemente** sem consolidar dependências para evitar conflitos e versões parciais.
