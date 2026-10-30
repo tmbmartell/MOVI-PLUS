@@ -44,6 +44,7 @@
     @media(max-width:340px){.grid{grid-template-columns:1fr}}
   </style>
   <script src="/assets/movi-fluxo-v1.js" defer></script>
+  <script src="/assets/movi-auto-report-v1.js" defer></script>
 </head>
 <body>
 <main>
@@ -80,6 +81,25 @@
     <div class="btns"><button class="primary" type="submit" id="save-recurring">Salvar conta</button><button type="button" id="cancel-recurring" hidden>Cancelar edição</button></div>
   </form>
   <p id="recurring-feedback" class="small" role="status" aria-live="polite"></p>
+</section>
+<section class="panel">
+  <h2>Receber meu resumo pelo WhatsApp</h2>
+  <p class="small">Você decide se quer receber. O envio é opcional, limitado ao seu WhatsApp vinculado. O relatório mostra apenas seus registros; não consulta contas bancárias.</p>
+  <form id="auto-report-form" class="recurring-form">
+    <label class="field full"><span><input id="report-enabled" type="checkbox" style="width:auto"> Quero receber o relatório automaticamente</span></label>
+    <label class="field">Frequência
+      <select id="report-frequency"><option value="weekly">Toda semana (mês até a data)</option><option value="monthly">Todo mês (mês anterior)</option></select>
+    </label>
+    <label class="field">Dia da semana
+      <select id="report-weekday"><option value="1">Segunda-feira</option><option value="2">Terça-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-feira</option><option value="5">Sexta-feira</option><option value="6">Sábado</option><option value="7">Domingo</option></select>
+    </label>
+    <label class="field">Horário local
+      <select id="report-hour"><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option></select>
+    </label>
+    <div class="btns"><button type="submit" class="primary">Salvar minhas preferências</button></div>
+  </form>
+  <p id="auto-report-info" class="small" role="status" aria-live="polite"></p>
+  <p class="note">Para relatórios mensais, o envio está previsto para o dia 1º, no horário escolhido. O envio depende de o WhatsApp do Clube estar autorizado e conectado. Você pode desativar a qualquer momento.</p>
 </section>
 <section class="panel"><h2>Compromissos mensais informados</h2><p class="small">Parcelas recorrentes declaradas no cadastro; não significam pagamento e podem já aparecer nos gastos acima.</p><div id="recurring"></div><div class="line"><span>Valor mensal informado</span><strong id="recurring-total"></strong></div></section>
 <section class="panel"><h2>Outras estimativas do cadastro</h2><div id="estimates"></div></section>
