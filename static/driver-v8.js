@@ -450,6 +450,7 @@ async function v8History(seq){
  const s=d.summary,left=Math.round((s.income-s.expense)*100)/100,groups={};
  d.items.forEach(x=>{(groups[x.entry_date]=groups[x.entry_date]||[]).push(x)});
  document.getElementById('body').innerHTML=
+ '<a href="/meu-fluxo" class="dv-btn dv-btn-ghost dv-press" style="margin-bottom:12px;display:flex;justify-content:center">Ver meu fluxo financeiro do mês</a>'+
  '<a href="/meu-pix" class="dv-btn dv-btn-ghost dv-press" style="margin-bottom:12px;display:flex;justify-content:center">Ver meus depósitos Pix</a>'+
  '<div class="dv-monthnav"><button type="button" class="dv-iconbtn dv-press" data-month="-1" aria-label="Mês anterior">'+v8i('left')+'</button><b>'+safe(v8MonthLabel(v8Month))+'</b>'+
  '<button type="button" class="dv-iconbtn dv-press" data-month="1" aria-label="Próximo mês" '+(v8Month>=now?'disabled':'')+'>'+v8i('right')+'</button></div>'+
