@@ -10,6 +10,14 @@ button{cursor:pointer;background:#e8b879;color:#192935;font-weight:700}button:fo
 .note{font-size:.84rem;color:#c7d6da;line-height:1.5}.warning{color:#ffe0aa}.checkbox{display:flex;align-items:center;gap:8px}.checkbox input{width:auto}
 .status{min-height:1.5rem;font-size:.86rem}header{display:flex;justify-content:space-between;align-items:center;gap:12px}
 hr{border:0;border-top:1px solid #44606c;margin:20px 0}
+.review-item{border:1px solid #4b6874;border-radius:12px;margin:10px 0;background:#203c49;padding:12px}
+.review-item summary{cursor:pointer;font-size:.88rem;line-height:1.5;font-weight:700;outline-offset:5px}
+.review-item[open]{background:#294753}
+.review-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.review-form label{min-width:0;word-break:break-word}
+.review-form button{grid-column:1/-1}
+@media(max-width:620px){.review-form{grid-template-columns:1fr}}
+
 </style><script src="/assets/movi-pix-admin-v1.js" defer></script></head>
 <body><main><header><span class="brand">MOVI+ · GESTÃO</span><a href="/">Voltar ao painel</a></header>
 <h1>Depósitos via Pix</h1><p class="note">Uma chave centralizada, valores individuais por motorista e três turnos por dia. O MOVI+ envia apenas instruções e registra declarações — não movimenta recursos nem verifica o recebimento no banco.</p>
