@@ -17,6 +17,7 @@ with tempfile.TemporaryDirectory(prefix="movi_auto_report_") as tmp:
     import finance_agent_pilot_v1 as pilot
     import finance_agent_chart_v1 as chart
     from finance_agent_waha_v1 import link_hash
+    from whatsapp_bridge_v5 import ensure_table
 
     client=TestClient(app.app,base_url="https://movi-qa.local")
     H={"X-Requested-With":"NOVAGENTE-V5"}
@@ -38,6 +39,7 @@ with tempfile.TemporaryDirectory(prefix="movi_auto_report_") as tmp:
                   "VALUES(2,1,0,0,0,0,?)",(app.now(),))
         c.execute("INSERT INTO finance_agent_wa_config(id,key_blob,enabled,updated_at) VALUES(1,?,1,?)",
                   (app.enc({"key":"fake-hmac-secret"}),app.now()))
+        ensure_table(c)
         c.execute("INSERT INTO whatsapp_bridge_config(id,encrypted,updated_at,actor) VALUES(1,?,?,?)",
                   (app.enc({"base_url":"http://127.0.0.1:18182","session":"clube-motorista",
                             "api_key":"test-only-key"}),app.now(),1))
