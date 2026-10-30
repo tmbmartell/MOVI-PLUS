@@ -10,6 +10,7 @@ async function api(path,method="GET",data){
   return o;
 }
 const rf=$("receiver-form"),df=$("driver-form"),sf=$("schedule-form");
+let reviewPage=1;
 const field=(form,k)=>form.elements.namedItem(k);
 const brl=cents=>"R$ "+(Number(cents)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 function elem(tag,cls,text){
@@ -73,7 +74,8 @@ function reviewPanel(x){
 async function load(){
  try{
   const [p,users,review,schedule]=await Promise.all([
-    api("/api/admin/pix"),api("/api/admin/pix/drivers"),api("/api/admin/pix/reviews"),
+    api("/api/admin/pix"),api("/api/admin/pix/drivers"),
+    api("/api/admin/pix/reviews?"+new URLSearchParams({month:$("review-month").value,state:$("review-state").value,page:String(reviewPage),page_size:"50"})),
     api("/api/admin/pix/schedule")
   ]);
   for(const slot of ["manha","tarde","noite"]){
@@ -101,15 +103,23 @@ async function load(){
     field(df,"monthly_amount").value=o?.dataset.monthly?(Number(o.dataset.monthly)/100).toFixed(2):"";
     field(df,"active").checked=o?.dataset.active!=="0";
   };
+  const pages=Math.max(1,review.pages||1);
+  $("review-pagination").textContent="Página "+review.page+" de "+pages+" · "+review.count+" registros";
+  $("review-prev").disabled=review.page<=1;
+  $("review-next").disabled=!review.has_next;
   const box=$("declared-list");box.replaceChildren();
   const summary=elem("p","note",
-    "Declarações: "+review.count+" · Confirmados manualmente: "+brl(review.confirmed_manually_cents)+
+    "Registros filtrados: "+review.count+" · Confirmados manualmente: "+brl(review.confirmed_manually_cents)+
     " · Pendentes: "+review.pending_count+" · Divergências: "+review.unmatched_count);
   box.append(summary);
   if(!(review.items||[]).length){box.append(elem("p","note","Nenhuma declaração registrada."));return}
   review.items.forEach(x=>box.append(reviewPanel(x)));
  }catch(e){$("receiver-status").textContent=e.message}
 }
+$("review-filters").addEventListener("submit",async ev=>{ev.preventDefault();reviewPage=1;await load()});
+$("review-clear").addEventListener("click",async()=>{$("review-month").value="";$("review-state").value="";reviewPage=1;await load()});
+$("review-prev").addEventListener("click",async()=>{if(reviewPage>1){reviewPage--;await load()}});
+$("review-next").addEventListener("click",async()=>{reviewPage++;await load()});
 rf.addEventListener("submit",async ev=>{
  ev.preventDefault();
  try{
