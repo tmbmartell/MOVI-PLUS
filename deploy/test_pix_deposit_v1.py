@@ -19,14 +19,14 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
 
     client=TestClient(app.app,base_url="https://pix-test.invalid")
     h={"X-Requested-With":"NOVAGENTE-V5"}
-    key="30.676.596/0001-05" # test-only fixture from the operator, no live send
+    key="12.345.678/0001-95" # synthetic CNPJ checksum fixture, no live send
     form={"key":key,"recipient_name":"","bank_verified":False,"enabled":False}
-    assert pix.pix_cnpj(key)=="30676596000105"
-    for invalid in ("00.000.000/0000-00","30.676.596/0001-06","123","a"*14):
+    assert pix.pix_cnpj(key)=="12345678000195"
+    for invalid in ("00.000.000/0000-00","12.345.678/0001-96","123","a"*14):
         try:pix.pix_cnpj(invalid)
         except Exception as e:assert e.status_code==422
         else:raise AssertionError("CNPJ erroneously valid")
-    print("01 - supplied Pix CNPJ checksum valid, invalid numbers rejected: PASS")
+    print("01 - synthetic Pix CNPJ checksum valid, invalid numbers rejected: PASS")
 
     assert client.get("/api/admin/pix").status_code==401
     assert client.get("/api/driver/pix/day").status_code==401
@@ -46,7 +46,7 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     res=client.put("/api/admin/pix",json=form,headers=h)
     assert res.status_code==200,res.text
     assert res.json()["enabled"] is False
-    assert client.get("/api/admin/pix").json()["key"]=="30676596000105"
+    assert client.get("/api/admin/pix").json()["key"]=="12345678000195"
     assert client.put("/api/admin/pix",json={**form,"enabled":True},headers=h).status_code in (409,422)
     assert client.put("/api/admin/pix",json={**form,"recipient_name":"Recebedor Teste","enabled":True},headers=h).status_code==409
     # Any change in recipient or key requires a separate saved-but-disabled step.
@@ -63,7 +63,7 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     oct_result=client.get("/api/driver/pix/day?date=2026-10-30")
     assert oct_result.status_code==200,oct_result.text
     j=oct_result.json()
-    assert j["pix_key"]=="30676596000105"
+    assert j["pix_key"]=="12345678000195"
     assert j["recipient_name_configured"]=="Recebedor Teste"
     assert len(j["slots"])==3
     assert sum(s["amount_cents"] for s in j["slots"])==j["slots"][0]["amount_cents"]+j["slots"][1]["amount_cents"]+j["slots"][2]["amount_cents"]
@@ -125,7 +125,7 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     os.environ["MOVI_PIX_REMINDERS_ENABLED"]="1"
     sent=pix.run_notice(instant=sample,dry_run=False)
     assert sent["sent"]==1,sent
-    assert len(out)==1 and out[0][1]==whatsapp and "30676596000105" in out[0][3]
+    assert len(out)==1 and out[0][1]==whatsapp and "12345678000195" in out[0][3]
     assert pix.run_notice(instant=sample,dry_run=False)["sent"]==0 and len(out)==1
     print("09 - gated synthetic send contains exact Pix key, one driver/slot and no retries: PASS")
 
