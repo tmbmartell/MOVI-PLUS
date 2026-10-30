@@ -95,9 +95,18 @@ with tempfile.TemporaryDirectory(prefix="movi_auto_report_") as tmp:
     os.environ["MOVI_REPORT_PUBLIC_BASE_URL"]="http://unsecured.example"
     assert ar.run_due(instant,dry_run=False)["sent"]==0
     os.environ["MOVI_REPORT_PUBLIC_BASE_URL"]="https://movi.example"
+    assert ar.run_due(instant,dry_run=True)["would_send"]==0
+    assert sent==[]
+    # Prior legal version cannot authorize a new outbound campaign.
+    import legal_v8
+    with app.db() as c:
+        required={k:True for k,_ in legal_v8.REQUIRED}
+        optional={k:False for k,_ in legal_v8.OPTIONAL}
+        legal_v8.record(c,2,required,optional,"qa")
+        c.commit()
     assert ar.run_due(instant,dry_run=True)["would_send"]==1
     assert sent==[]
-    print("04 - HTTPS domain validated and dry run never sends: PASS")
+    print("04 - HTTPS, legal terms and dry run gates validated; zero sends: PASS")
 
     result=ar.run_due(instant,dry_run=False)
     assert result["sent"]==1,result
