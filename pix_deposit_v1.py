@@ -232,12 +232,25 @@ def set_installment(uid:int,data:dict,u=Depends(admin)):
     return {"ok":True,"uid":uid,"monthly_cents":monthly,"active":data["active"]}
 
 @router.get("/api/admin/pix/drivers")
-def driver_list(u=Depends(admin)):
+def driver_list(q:str="",u=Depends(admin)):
+    if not isinstance(q,str) or len(q)>60:
+        raise HTTPException(422,"Busca muito longa")
+    q=q.strip()
+    where="u.role='driver'"
+    params=[]
+    if q:
+        # Escape SQL LIKE wildcards so a literal user query cannot expand to all users.
+        escaped=q.lower().replace("\\","\\\\").replace("%","\\%").replace("_","\\_")
+        where+=" AND (lower(u.name) LIKE ? ESCAPE '\\' OR lower(u.username) LIKE ? ESCAPE '\\' OR CAST(u.id AS TEXT)=?)"
+        params.extend(["%"+escaped+"%","%"+escaped+"%",q])
     with db() as c:
-        rows=c.execute("SELECT u.id,u.name,u.status,p.monthly_cents,p.active FROM users u "
-             "LEFT JOIN movi_pix_installment p ON p.uid=u.id WHERE u.role='driver' "
-             "ORDER BY u.id LIMIT 1000")
-        return {"items":[dict(x) for x in rows]}
+        count=c.execute("SELECT COUNT(*) FROM users u WHERE "+where,params).fetchone()[0]
+        rows=c.execute("SELECT u.id,u.name,u.username,u.status,p.monthly_cents,p.active FROM users u "
+             "LEFT JOIN movi_pix_installment p ON p.uid=u.id WHERE "+where+
+             " ORDER BY u.id DESC LIMIT 25",params)
+        return {"items":[dict(x) for x in rows],"count":count,
+                "more":count>25,"limit":25,
+                "notice":"Pesquise pelo nome, usuário ou ID para localizar motoristas fora da lista inicial."}
 
 @router.get("/api/driver/pix/day")
 def driver_day(date:str="",u=Depends(driver)):
