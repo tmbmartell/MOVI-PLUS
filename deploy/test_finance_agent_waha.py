@@ -3,7 +3,7 @@ import os,sys,tempfile,time,json,hmac,hashlib
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="novagente_waha_fin_") as tmp:
  os.environ["CLUBE_DATA"]=tmp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app,finance_agent_waha_v1 as wa,finance_agent_pilot_v1 as pilot
  from whatsapp_bridge_v5 import ensure_table
  outbound=[]
