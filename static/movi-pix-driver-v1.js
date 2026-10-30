@@ -23,7 +23,8 @@ async function show(){try{
  $("day-status").textContent="Solicitações programadas. Confira a chave e o titular antes de pagar.";
  const consent=await api("/api/driver/pix/notice-consent");$("notice-consent").checked=!!consent.enabled;
 }catch(e){$("pix-content").hidden=true;$("day-status").textContent=e.message}}
-$("day").value=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Porto_Velho",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+const todayParts=Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:"America/Porto_Velho",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()).map(p=>[p.type,p.value]));
+$("day").value=todayParts.year+"-"+todayParts.month+"-"+todayParts.day;
 $("show-day").onclick=show;
 $("copy-key").onclick=()=>navigator.clipboard.writeText(pixKey).then(()=>{$("day-status").textContent="Chave Pix copiada."}).catch(()=>{$("day-status").textContent="Não consegui copiar automaticamente."});
 $("save-consent").onclick=async()=>{try{let r=await api("/api/driver/pix/notice-consent","PUT",{enabled:$("notice-consent").checked});$("consent-status").textContent=r.enabled?"Escolha registrada. O envio depende da liberação do Clube.":"Avisos desligados."}catch(e){$("consent-status").textContent=e.message}};
