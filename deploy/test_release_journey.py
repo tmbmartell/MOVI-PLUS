@@ -86,9 +86,16 @@ with tempfile.TemporaryDirectory(prefix="movi_release_journey_") as folder:
     attempted=cli.put("/api/finance/auto-report",json={
         "enabled":True,"frequency":"weekly","weekday":1,"hour":9
     },headers=H)
+    assert attempted.status_code==403,attempted.text
+    assert cli.put("/api/finance-agent/consent",json={
+        "enabled":True,"media_ai":False,"trends":False,"offers":False,"text_ai":False
+    },headers=H).status_code==200
+    attempted=cli.put("/api/finance/auto-report",json={
+        "enabled":True,"frequency":"weekly","weekday":1,"hour":9
+    },headers=H)
     assert attempted.status_code==409,attempted.text
     assert cli.get("/api/finance/auto-report").json()["enabled"] is False
-    print("06 - WhatsApp report cannot opt in without a verified WhatsApp link: PASS")
+    print("06 - separate agent consent and verified phone link required: PASS")
 
     assert cli.post("/api/logout",json={},headers=H).status_code==200
     assert cli.get("/api/finance/flow").status_code==401
