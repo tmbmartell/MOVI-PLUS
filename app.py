@@ -601,3 +601,7 @@ app.include_router(finance_agent_pilot_router)
 # Driver-only financial-flow web page and read-only API. No automatic WhatsApp sends.
 from finance_flow_v1 import router as finance_flow_router
 app.include_router(finance_flow_router)
+
+# Explicit monthly commitments, visible only to their own driver.
+from finance_recurring_v1 import router as finance_recurring_router
+app.include_router(finance_recurring_router)
