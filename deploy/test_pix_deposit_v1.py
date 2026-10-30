@@ -96,7 +96,7 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     out=[]
     pilot.send_once=lambda uid,chat,event_id,text:(out.append((uid,chat,event_id,text)) or True)
     current_month=today.strftime("%Y-%m")
-    sample=dt.datetime(today.year,today.month,today.day,13,0,tzinfo=dt.timezone.utc)
+    sample=dt.datetime(today.year,today.month,today.day,18,0,tzinfo=dt.timezone.utc) # 14h Porto Velho, tarde
     due=pix.run_notice(instant=sample,dry_run=True)
     assert due["due"]==0 and not out
     assert client.put("/api/driver/pix/notice-consent",json={"enabled":True},headers=h).status_code==409
@@ -126,8 +126,11 @@ with tempfile.TemporaryDirectory(prefix="movi_pix_qa_") as folder:
     sent=pix.run_notice(instant=sample,dry_run=False)
     assert sent["sent"]==1,sent
     assert len(out)==1 and out[0][1]==whatsapp and "12345678000195" in out[0][3]
+    # Morning was declared paid already: never remind again on that slot.
+    morning=pix.run_notice(instant=sample-dt.timedelta(hours=5),dry_run=False)
+    assert morning["sent"]==0 and len(out)==1
     assert pix.run_notice(instant=sample,dry_run=False)["sent"]==0 and len(out)==1
-    print("09 - gated synthetic send contains exact Pix key, one driver/slot and no retries: PASS")
+    print("09 - synthetic send one eligible turn only, skips declared morning and prevents retries: PASS")
 
     assert client.put("/api/driver/pix/notice-consent",json={"enabled":False},headers=h).status_code==200
     next_day=sample+dt.timedelta(days=1)
