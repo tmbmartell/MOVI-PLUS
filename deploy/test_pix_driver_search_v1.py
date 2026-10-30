@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory(prefix="movi_driver_search_") as tmp:
         phash=app.password_hash("SyntheticPassForSearch2026!")
         db.execute("INSERT INTO users(id,username,phash,role,status,name,created_at,must_change) "
                    "VALUES(1,'synthetic_admin',?,'admin','active','Gestor Teste',?,0)",(phash,app.now()))
-        for uid in range(2,1702):
+        for uid in range(2,4002):
             db.execute("INSERT INTO users(id,username,phash,role,status,name,created_at,must_change) "
                        "VALUES(?, ?, ?,'driver','active',?, ?,0)",
                        (uid,"motorista"+str(uid),phash,"Motorista Teste "+str(uid),app.now()))
@@ -25,11 +25,11 @@ with tempfile.TemporaryDirectory(prefix="movi_driver_search_") as tmp:
         first=client.get("/api/admin/pix/drivers")
         assert first.status_code==200,first.text
         result=first.json()
-        assert result["count"]==1700 and result["more"] is True and len(result["items"])==25
-        assert result["items"][0]["id"]==1701
-        print("01 - initial driver list bounded to 25 even with 1700 users: PASS")
+        assert result["count"]==4000 and result["more"] is True and len(result["items"])==25
+        assert result["items"][0]["id"]==4001
+        print("01 - initial driver list bounded to 25 even with 4000 users: PASS")
 
-        for q,identifier in (("motorista1601",1601),("1601",1601),("Motorista Teste 1601",1601)):
+        for q,identifier in (("motorista3601",3601),("3601",3601),("Motorista Teste 3601",3601)):
             r=client.get("/api/admin/pix/drivers",params={"q":q})
             assert r.status_code==200,r.text
             assert any(x["id"]==identifier for x in r.json()["items"])
@@ -41,10 +41,10 @@ with tempfile.TemporaryDirectory(prefix="movi_driver_search_") as tmp:
         assert client.get("/api/admin/pix/drivers",params={"q":"not-in-list"}).json()["count"]==0
         print("03 - literal wildcard escape, empty search and validation: PASS")
 
-        upd=client.put("/api/admin/pix/driver/1601",json={"monthly_amount":"1550.25","active":True},
+        upd=client.put("/api/admin/pix/driver/3601",json={"monthly_amount":"1550.25","active":True},
                        headers={"X-Requested-With":"NOVAGENTE-V5"})
         assert upd.status_code==200,upd.text
-        one=client.get("/api/admin/pix/drivers",params={"q":"1601"}).json()["items"]
+        one=client.get("/api/admin/pix/drivers",params={"q":"3601"}).json()["items"]
         assert len(one)==1 and one[0]["monthly_cents"]==155025
         print("04 - full installment lifecycle for driver beyond initial list: PASS")
     finally:
