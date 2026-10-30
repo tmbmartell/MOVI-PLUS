@@ -5,13 +5,15 @@ async function api(path,method="GET",data){const r=await fetch(path,{method,cred
 let pixKey="",dayData;
 async function show(){try{
  dayData=await api("/api/driver/pix/day?date="+encodeURIComponent($("day").value));pixKey=dayData.pix_key;
+ const reviews=await api("/api/driver/pix/reviews?date="+encodeURIComponent($("day").value)).catch(()=>({items:[]}));
+ const reviewBySlot=new Map((reviews.items||[]).map(x=>[x.slot,x.review_state]));
  $("pix-content").hidden=false;$("pix-key").textContent=pixKey;
  $("pix-name").textContent="Titular informado pelo gestor: "+dayData.recipient_name_configured;
  const root=$("turns");root.replaceChildren();
  (dayData.slots||[]).forEach(s=>{
   const row=document.createElement("div");row.className="turn";
   const label=document.createElement("strong");label.textContent=({manha:"Manhã",tarde:"Tarde",noite:"Noite"})[s.slot]+" · "+pt(s.amount_cents);
-  const note=document.createElement("p");note.className="note";note.textContent=s.declared_by_driver?"Você informou que já pagou. A confirmação bancária está pendente.":"Previsto para este turno; não é comprovante.";
+  const note=document.createElement("p");note.className="note";const review=reviewBySlot.get(s.slot);note.textContent=review==="confirmed_manual"?"Conferência manual do crédito registrada pelo gestor.":review==="unmatched"?"Divergência: gestor não localizou o crédito. Entre em contato com o Clube.":s.declared_by_driver?"Você informou que já pagou; aguardando conferência do extrato.":"Previsto para este turno; não é comprovante.";
   const buttons=document.createElement("div");buttons.className="actions";
   const copy=document.createElement("button");copy.type="button";copy.textContent="Copiar solicitação";
   copy.onclick=()=>navigator.clipboard.writeText(s.message).then(()=>{$("day-status").textContent="Mensagem copiada."}).catch(()=>{$("day-status").textContent="Não consegui copiar. Selecione o texto manualmente."});
