@@ -74,7 +74,7 @@ function reviewPanel(x){
 async function load(){
  try{
   const [p,users,review,schedule]=await Promise.all([
-    api("/api/admin/pix"),api("/api/admin/pix/drivers"),
+    api("/api/admin/pix"),api("/api/admin/pix/drivers?q="+encodeURIComponent($("driver-search").value.trim())),
     api("/api/admin/pix/reviews?"+new URLSearchParams({month:$("review-month").value,state:$("review-state").value,page:String(reviewPage),page_size:"50"})),
     api("/api/admin/pix/schedule")
   ]);
@@ -98,6 +98,9 @@ async function load(){
     select.add(opt);
   });
   select.value=selected;
+  $("driver-search-status").textContent=users.count===0?"Nenhum motorista encontrado.":users.count>25?
+    "Mostrando 25 de "+users.count+" motoristas. Refine a busca.":
+    "Motoristas encontrados: "+users.count;
   select.onchange=()=>{
     const o=select.selectedOptions[0];
     field(df,"monthly_amount").value=o?.dataset.monthly?(Number(o.dataset.monthly)/100).toFixed(2):"";
@@ -116,6 +119,8 @@ async function load(){
   review.items.forEach(x=>box.append(reviewPanel(x)));
  }catch(e){$("receiver-status").textContent=e.message}
 }
+$("driver-find").addEventListener("click",async()=>{await load()});
+$("driver-search").addEventListener("keydown",async ev=>{if(ev.key==="Enter"){ev.preventDefault();await load()}});
 $("review-filters").addEventListener("submit",async ev=>{ev.preventDefault();reviewPage=1;await load()});
 $("review-clear").addEventListener("click",async()=>{$("review-month").value="";$("review-state").value="";reviewPage=1;await load()});
 $("review-prev").addEventListener("click",async()=>{if(reviewPage>1){reviewPage--;await load()}});
