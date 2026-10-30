@@ -138,6 +138,7 @@ with tempfile.TemporaryDirectory(prefix="movi_auto_report_") as tmp:
     assert client.get(link).status_code==404
     print("06 - 1h private link requires original logged-in driver and expires: PASS")
 
+    client.cookies.clear()
     app.app.dependency_overrides[app.driver]=lambda:driver
     changed=client.put(pref,json={**settings,"enabled":False},headers=H)
     assert changed.status_code==200 and not changed.json()["enabled"]
