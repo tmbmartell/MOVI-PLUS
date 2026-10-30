@@ -597,3 +597,7 @@ app.include_router(finance_agent_release_router)
 
 from finance_agent_pilot_v1 import router as finance_agent_pilot_router
 app.include_router(finance_agent_pilot_router)
+
+# Driver-only financial-flow web page and read-only API. No automatic WhatsApp sends.
+from finance_flow_v1 import router as finance_flow_router
+app.include_router(finance_flow_router)
