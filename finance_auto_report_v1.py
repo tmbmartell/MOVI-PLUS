@@ -207,6 +207,8 @@ def _pilot_chat(conn,uid):
     from finance_agent_waha_v1 import private_settings,CHAT,link_hash
     from finance_agent_v1 import options
     from whatsapp_bridge_v5 import config_get
+    if not conn.execute("SELECT 1 FROM users WHERE id=? AND role='driver' AND status='active'",(uid,)).fetchone():
+        return None
     if not permitted(conn,uid) or not options(conn,uid)["enabled"]:
         return None
     _,inbound_enabled=private_settings(conn)
