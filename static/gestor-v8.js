@@ -17,6 +17,7 @@ const GV_NAV=[
   ['agent-manage','Agente financeiro','spark','Liberar ou pausar o assistente'],
   ['whatsapp','WhatsApp','chat','Conexão do número do MOVI+'],
   ['distribution','Distribuição','pie','Simulador de divisão de valores'],
+  ['pix-deposit','Cobranças Pix','card','Chave do recebedor e parcelas dos motoristas'],
   ['privacy','Pedidos de exclusão','lock','Motoristas que pediram para apagar dados'],
   ['audit','Auditoria','file','Histórico de ações no sistema'],
   ['settings','Minha conta','key','Senha, 2 etapas e chave do agente']]]
@@ -55,6 +56,7 @@ async function gvClick(e){
   user=null;tab='home';login();return;
  }
  if(t.dataset.gtab==='menu'){gvMenuSheet();return}
+ if(t.dataset.gtab==='pix-deposit'){window.location.href='/gestao/pix';return}
  tab=t.dataset.gtab;render();
 }
 /* No celular, o menu completo abre num painel, com a mesma ordem e explicações. */
@@ -64,7 +66,7 @@ function gvMenuSheet(){
    '<button type="button" class="dv-row dv-row-compact dv-press" data-go-g="'+id+'"><span class="dv-row-ic dv-tone-gold">'+v8i(icon)+'</span><span class="dv-row-txt"><b>'+label+'</b><small>'+sub+'</small></span>'+v8i('chev','dv-chev')+'</button>').join('')+'</div>').join('')+
   '<div style="margin-top:18px"><button type="button" class="dv-btn dv-btn-ghost dv-press" data-glogout-s>Sair</button></div>',{label:'Menu da gestão'});
  s.el.onclick=e=>{
-  const b=e.target.closest('[data-go-g]');if(b){s.close();tab=b.dataset.goG;render();return}
+  const b=e.target.closest('[data-go-g]');if(b){s.close();if(b.dataset.goG==='pix-deposit'){window.location.href='/gestao/pix';return}tab=b.dataset.goG;render();return}
   if(e.target.closest('[data-glogout-s]')){s.close();gvClick({target:document.querySelector('[data-glogout]')})}
  };
 }
