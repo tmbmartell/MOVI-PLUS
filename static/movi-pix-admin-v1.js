@@ -9,7 +9,7 @@ async function api(path,method="GET",data){
   if(!r.ok)throw Error(o.detail||"Não foi possível concluir a operação");
   return o;
 }
-const rf=$("receiver-form"),df=$("driver-form");
+const rf=$("receiver-form"),df=$("driver-form"),sf=$("schedule-form");
 const field=(form,k)=>form.elements.namedItem(k);
 const brl=cents=>"R$ "+(Number(cents)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 function elem(tag,cls,text){
@@ -72,9 +72,13 @@ function reviewPanel(x){
 }
 async function load(){
  try{
-  const [p,users,review]=await Promise.all([
-    api("/api/admin/pix"),api("/api/admin/pix/drivers"),api("/api/admin/pix/reviews")
+  const [p,users,review,schedule]=await Promise.all([
+    api("/api/admin/pix"),api("/api/admin/pix/drivers"),api("/api/admin/pix/reviews"),
+    api("/api/admin/pix/schedule")
   ]);
+  for(const slot of ["manha","tarde","noite"]){
+    field(sf,slot).value=String(schedule.hours[slot]);
+  }
   field(rf,"key").value=p.key||"";
   field(rf,"recipient_name").value=p.recipient_name||"";
   field(rf,"bank_verified").checked=!!p.bank_verified;
@@ -115,6 +119,15 @@ rf.addEventListener("submit",async ev=>{
   $("receiver-status").textContent="Configuração salva.";
   await load();
  }catch(e){$("receiver-status").textContent=e.message}
+});
+sf.addEventListener("submit",async ev=>{
+ ev.preventDefault();
+ try{
+  const hours=Object.fromEntries(["manha","tarde","noite"].map(slot=>[slot,Number(field(sf,slot).value)]));
+  await api("/api/admin/pix/schedule","PUT",hours);
+  $("schedule-status").textContent="Horários salvos. Avisos continuam dependendo da autorização e da liberação técnica.";
+  await load();
+ }catch(e){$("schedule-status").textContent=e.message}
 });
 df.addEventListener("submit",async ev=>{
  ev.preventDefault();
