@@ -221,7 +221,7 @@ def bridge_request_pairing_code(data:dict,u=Depends(admin)):
  if not isinstance(data,dict) or set(data)!={"phone_number"}:
   raise HTTPException(422,"Informe apenas o telefone para vincular.")
  raw=data.get("phone_number")
- if not isinstance(raw,str) or not re.fullmatch(r"\\+?[0-9]{10,15}",raw.strip()):
+ if not isinstance(raw,str) or not re.fullmatch(r"\+?[0-9]{10,15}",raw.strip()):
   raise HTTPException(422,"Informe DDI, DDD e telefone, somente números.")
  phone=raw.strip().lstrip("+")
  cfg,state=_unpaired_conf()
