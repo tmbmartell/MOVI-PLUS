@@ -354,10 +354,27 @@ def add_campaign(data:dict,u=Depends(admin)):
 
 @router.put("/api/program/campaigns/{cid}")
 def publish_campaign(cid:int,data:dict,u=Depends(admin)):
- if set(data)!={"status"}:raise HTTPException(422,"Informe apenas o estado")
- status=verify_enum(data["status"],STATES,"Situação")
+ # Compatível com a ação antiga de publicar/arquivar, mas também permite ao gestor
+ # editar título, texto, público e banner sem recriar a campanha.
+ allowed={"title","body","status","segment","media_id"}
+ if not isinstance(data,dict) or not data or set(data)-allowed:
+  raise HTTPException(422,"Campos de campanha inválidos")
  with db() as c:
-  row=c.execute("UPDATE program_campaigns SET status=?,updated_at=? WHERE id=?",(status,now(),cid))
-  if not row.rowcount:raise HTTPException(404,"Campanha não encontrada")
-  audit(c,u["id"],"program:campaign_status",str(cid)+":"+status);c.commit()
+  previous=c.execute("SELECT * FROM program_campaigns WHERE id=?",(cid,)).fetchone()
+  if not previous:raise HTTPException(404,"Campanha não encontrada")
+  title=txt(data["title"],"Título",3,100) if "title" in data else previous["title"]
+  body=txt(data["body"],"Mensagem",3,1200) if "body" in data else previous["body"]
+  status=verify_enum(data["status"],STATES,"Situação") if "status" in data else previous["status"]
+  segment=verify_enum(data["segment"],SEGMENTS,"Segmento") if "segment" in data else previous["segment"]
+  mid=previous["media_id"]
+  if "media_id" in data:
+   mid=data["media_id"] or None
+   if mid is not None and (not isinstance(mid,str) or not re.fullmatch(r"[0-9a-f]{32}",mid)):
+    raise HTTPException(422,"Arquivo de mídia inválido")
+   if mid and not c.execute("SELECT id FROM program_media WHERE id=?",(mid,)).fetchone():
+    raise HTTPException(422,"Arquivo de mídia inexistente")
+  c.execute("UPDATE program_campaigns SET title=?,body=?,status=?,segment=?,media_id=?,updated_at=? WHERE id=?",
+   (title,body,status,segment,mid,now(),cid))
+  event="program:campaign_edited" if set(data)!={"status"} else "program:campaign_status"
+  audit(c,u["id"],event,str(cid)+":"+status);c.commit()
  return {"ok":True,"messages_sent":0}

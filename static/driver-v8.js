@@ -451,6 +451,7 @@ async function v8History(seq){
  d.items.forEach(x=>{(groups[x.entry_date]=groups[x.entry_date]||[]).push(x)});
  document.getElementById('body').innerHTML=
  '<a href="/meu-fluxo" class="dv-btn dv-btn-ghost dv-press" style="margin-bottom:12px;display:flex;justify-content:center">Ver meu fluxo financeiro do mês</a>'+
+ '<a href="/meu-pix" class="dv-btn dv-btn-ghost dv-press" style="margin-bottom:12px;display:flex;justify-content:center">Ver meus depósitos Pix</a>'+
  '<div class="dv-monthnav"><button type="button" class="dv-iconbtn dv-press" data-month="-1" aria-label="Mês anterior">'+v8i('left')+'</button><b>'+safe(v8MonthLabel(v8Month))+'</b>'+
  '<button type="button" class="dv-iconbtn dv-press" data-month="1" aria-label="Próximo mês" '+(v8Month>=now?'disabled':'')+'>'+v8i('right')+'</button></div>'+
  '<div class="dv-sum3"><div><span>Ganhei</span><b class="dv-money dv-in">'+brl(s.income)+'</b></div><div><span>Gastei</span><b class="dv-money dv-out">'+brl(s.expense)+'</b></div><div><span>'+(left<0?'Faltou':'Sobrou')+'</span><b class="dv-money'+(left<0?' dv-out':'')+'">'+brl(Math.abs(left))+'</b></div></div>'+
@@ -577,7 +578,7 @@ async function v8Benefits(seq){
  '<p class="dv-p" style="margin-top:12px">Ganhe pontos assim:</p>'+
  '<div class="dv-meter"><div class="dv-meter-top"><span>Respondendo o cadastro</span><span>'+p.profile+' de 60</span></div><div class="dv-meter-track"><i style="width:'+Math.min(100,p.profile/60*100)+'%"></i></div></div>'+
  '<div class="dv-meter"><div class="dv-meter-top"><span>Anotando em dias diferentes</span><span>'+p.diary+' de 40</span></div><div class="dv-meter-track"><i style="width:'+Math.min(100,p.diary/40*100)+'%"></i></div></div>'+
- '<p class="dv-small" style="margin-top:12px">Pontos não são dinheiro. Servem para pedir os benefícios abaixo.</p>'+
+ '<p class="dv-small" style="margin-top:12px">Esses pontos registram participação e ainda não representam depósitos comprovados, dinheiro ou saldo para saque. Benefícios só ficam disponíveis quando o gestor cadastra as condições; pedidos exigem aprovação e confirmação da entrega.</p>'+
  (p.profile<60?'<button type="button" class="dv-btn dv-btn-ghost dv-press" style="margin-top:14px" data-go="profile">'+v8i('clipboard')+'Ganhar pontos agora</button>':'')+'</section>'+
  '<h2 class="dv-h" style="margin-top:22px">O que você pode pedir</h2>'+
  (d.items.some(b=>b.active)?d.items.filter(b=>b.active).sort((a,b)=>a.points_required-b.points_required).map(b=>{const missing=Math.max(0,b.points_required-p.total),out=b.remaining<=0;
@@ -979,7 +980,7 @@ function v8ReadAnswer(root,q){
   case 'cpf':{const d=v8Digits(raw);if(d.length<11)return {error:'O CPF tem 11 números. Faltam '+(11-d.length)+'.'};if(!v8CpfOk(d))return {error:'Esse CPF não existe. Confira os números no seu documento.'};return {value:d}}
   case 'rg':{const d=v8Digits(raw);if(d.length<5)return {error:'O RG tem pelo menos 5 números.'};return {value:raw}}
   case 'phone':{const d=v8Digits(raw);if(d.length<11)return {error:'Digite o DDD e os 9 números do celular.'};if(!V8_DDD.has(Number(d.slice(0,2))))return {error:'Esse DDD não existe. Confira os 2 primeiros números.'};if(d[2]!=='9')return {error:'Celular começa com 9 depois do DDD.'};return {value:d}}
-  case 'plate':{const p=raw.replace('-','');if(!/^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(p))return {error:'A placa tem 3 letras e 4 números. Exemplo: ABC1D23.'};return {value:raw}}
+  case 'plate':{const p=raw.toUpperCase().replace('-','');if(!/^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(p))return {error:'Confira a placa. Exemplo antigo: ABC1234; novo: ABC1D23.'};return {value:p}}
   case 'name':{const parts=raw.trim().split(/\s+/).filter(x=>x.replace(/['-]/g,'').length>=2);if(parts.length<2)return {error:'Escreva o nome e o sobrenome.'};return {value:raw.trim()}}
   case 'email':{if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(raw))return {error:'O e-mail precisa ter @ e um ponto. Exemplo: nome@gmail.com'};return {value:raw}}
   case 'text':{if(!raw)return {error:'Escreva sua resposta ou toque em Pular.'};return {value:raw}}
@@ -1041,7 +1042,7 @@ async function v8Profile(seq){
  const [label,hint]=V8_Q[q.key]||[q.label,''];
  body.innerHTML=head+'<section class="dv-card" id="dvQ" style="display:grid;gap:16px"><div><p class="dv-q" style="margin:0">'+safe(label)+'</p>'+(hint?'<p class="dv-small" style="margin-top:6px">'+safe(hint)+'</p>':'')+'</div>'+v8QuestionInput(q,'')+
   '<p class="dv-err" id="dvAnsErr" role="alert"></p>'+(q.type==='select'?'':'<button type="button" class="dv-btn dv-btn-gold dv-press" id="dvAnswer">Responder</button>')+
-  '<button type="button" class="dv-btn dv-btn-quiet" id="dvSkip">Pular esta pergunta</button></section>'+
+  (q.key==='vehicle_plate'?'<p class="dv-small">A placa é necessária para concluir o cadastro de identificação autorizado. Você poderá corrigir o número depois.</p>':'<button type="button" class="dv-btn dv-btn-quiet" id="dvSkip">Pular esta pergunta</button>')+'</section>'+
   '<button type="button" class="dv-btn dv-btn-ghost dv-press" data-go="profile-all">Ver todas as respostas</button>';
  const box=document.getElementById('dvQ'),err=document.getElementById('dvAnsErr');
  let sending=false;
@@ -1056,7 +1057,8 @@ async function v8Profile(seq){
  if(a)a.onclick=()=>{const r=v8ReadAnswer(box,q);if(r.error){err.textContent=r.error;return}answer(r.value)};
  const ans=document.getElementById('dvAns');
  if(ans&&ans.tagName==='INPUT'){ans.focus({preventScroll:true});ans.onkeydown=e=>{if(e.key==='Enter'&&a){e.preventDefault();a.click()}}}
- document.getElementById('dvSkip').onclick=async()=>{
+ const skip=document.getElementById('dvSkip');
+ if(skip)skip.onclick=async()=>{
   try{await request('profile/answer',{key:q.key,skip:true});render()}catch(x){err.textContent=x.message}
  };
 }

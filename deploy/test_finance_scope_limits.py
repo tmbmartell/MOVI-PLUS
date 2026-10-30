@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="novagente_scope_qa_") as d:
  os.environ["CLUBE_DATA"]=d
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app,finance_agent_v1 as agent,finance_agent_limits_v1 as guard
  from finance_agent_core import classify_text
  assert guard.LIMITS=={"text_ai":20,"audio":5,"image":5,"chart":3}

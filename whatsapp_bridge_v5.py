@@ -187,6 +187,58 @@ def bridge_start(u=Depends(admin)):
   c.commit()
  return {"ok":True,"notice":"Sessão iniciada apenas para autenticação. Abra o QR para emparelhar quando quiser."}
 
+def _unpaired_conf():
+ cfg=stored()
+ resp,status=waha(cfg,"GET","/api/sessions/"+cfg["session"])
+ if status==404:raise HTTPException(409,"Sessão não criada. Configure e inicie a sessão antes.")
+ try:state=extract_status(resp.json())
+ except ValueError:raise HTTPException(503,"Resposta WAHA inválida.")
+ if state["connected"] or state["status"]=="WORKING":
+  raise HTTPException(409,"WhatsApp já conectado. Não reinicie nem peça outro código.")
+ if state["status"] not in ("SCAN_QR_CODE","STARTING","FAILED","STOPPED"):
+  raise HTTPException(409,"Sessão não está aguardando pareamento.")
+ return cfg,state
+
+@router.post("/api/admin/whatsapp-bridge/refresh-qr")
+def bridge_refresh_qr(u=Depends(admin)):
+ """Explicit bounded recovery only for unpaired sessions when WEBJS QR is stale."""
+ throttle(u["id"],"refresh_qr",12)
+ cfg,state=_unpaired_conf()
+ if state["status"]=="STARTING":
+  raise HTTPException(409,"Sessão ainda iniciando. Consulte o status antes de reiniciar.")
+ _,code=waha(cfg,"POST","/api/sessions/"+cfg["session"]+"/restart",{})
+ if code==404:raise HTTPException(409,"Sessão não existe; crie-a antes.")
+ with db() as c:
+  audit(c,u["id"],"whatsapp:qr_manual_refresh","unpaired_session_only")
+  c.commit()
+ return {"ok":True,"status":"STARTING","notice":
+  "Reinício solicitado apenas para a sessão não pareada. Aguarde SCAN_QR_CODE e mostre o novo QR."}
+
+@router.post("/api/admin/whatsapp-bridge/request-code")
+def bridge_request_pairing_code(data:dict,u=Depends(admin)):
+ """Phone pairing fallback, with no phone or pairing code persistence or logging."""
+ if not isinstance(data,dict) or set(data)!={"phone_number"}:
+  raise HTTPException(422,"Informe apenas o telefone para vincular.")
+ raw=data.get("phone_number")
+ if not isinstance(raw,str) or not re.fullmatch(r"\+?[0-9]{10,15}",raw.strip()):
+  raise HTTPException(422,"Informe DDI, DDD e telefone, somente números.")
+ phone=raw.strip().lstrip("+")
+ throttle(u["id"],"request_code",30)
+ cfg,state=_unpaired_conf()
+ if state["status"]!="SCAN_QR_CODE":
+  raise HTTPException(409,"Aguarde a sessão indicar SCAN_QR_CODE antes de pedir código.")
+ resp,code=waha(cfg,"POST","/api/"+cfg["session"]+"/auth/request-code",{"phoneNumber":phone})
+ if not resp:raise HTTPException(503,"WAHA não retornou código de pareamento.")
+ try:payload=resp.json()
+ except ValueError:raise HTTPException(503,"WAHA retornou resposta inválida.")
+ token=payload.get("code") if isinstance(payload,dict) else None
+ if not isinstance(token,str) or not re.fullmatch(r"[A-Za-z0-9-]{4,20}",token):
+  raise HTTPException(503,"Código não disponível nesta sessão. Use o QR Code.")
+ with db() as c:
+  audit(c,u["id"],"whatsapp:pairing_code_requested","no_phone_or_code_stored")
+  c.commit()
+ return {"code":token,"notice":"Código temporário. Digite no próprio WhatsApp, em Aparelhos conectados. Não compartilhe."}
+
 @router.post("/api/admin/whatsapp-bridge/qr")
 def bridge_qr(u=Depends(admin)):
  throttle(u["id"],"qr",4)

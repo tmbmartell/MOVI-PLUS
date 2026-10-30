@@ -1,7 +1,7 @@
 import os,sys,tempfile,secrets,time
 with tempfile.TemporaryDirectory() as tmp:
  os.environ["CLUBE_DATA"]=tmp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app,security_stage3_v5 as m
  from fastapi.testclient import TestClient
  secret=secrets.token_urlsafe(16)+"A4"

@@ -1,0 +1,11 @@
+[Unit]
+Description=MOVI+ - verificação horária de três turnos diários de depósito Pix
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=20s
+Unit=novagente-movi-pix.service
+
+[Install]
+WantedBy=timers.target

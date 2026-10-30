@@ -23,8 +23,8 @@ def render_jpeg(data):
    filters.append(f"drawtext=fontfile={BOLD if bold else FONT}:textfile={filepath}:fontcolor={color}:fontsize={size}:x={x}:y={y}")
   box(0,0,900,705,"0xf5f8f2")
   box(0,0,900,105,"0x173b30")
-  label("CLUBE DO MOTORISTA",42,23,32,"white",True)
-  label("SEU RESUMO FINANCEIRO  •  "+data["label"].upper(),42,66,16,"0xeac887",False)
+  label("MOVI+",42,23,36,"white",True)
+  label("SEU FLUXO FINANCEIRO  •  "+data["label"].upper(),42,66,16,"0xeac887",False)
   for x,title,val in ((38,"ENTRADAS",data["income"]),(330,"DESPESAS",data["expense"]),(621,"DIFERENÇA",data["balance"])):
    box(x,125,244,122,"white")
    label(title,x+14,144,17,"0x668574",True)
@@ -41,9 +41,11 @@ def render_jpeg(data):
     box(40,yy+30,max(8,round(610*value/maximum)),14,"0x31825b")
   else:
    label("Sem despesas confirmadas neste mês.",40,337,22,"0x657b6d")
+  if "scheduled_total" in data:
+   label("CONTAS FIXAS PREVISTAS (À PARTE): "+money(data.get("scheduled_total",0)),39,630,14,"0x507259",True)
   box(0,656,900,49,"0xe5efe3")
   label("SOMENTE REGISTROS CONFIRMADOS  •  NÃO É SALDO BANCÁRIO",38,672,15,"0x507259",True)
-  outfile=str(Path(folder)/"clube-motorista-resumo.jpg")
+  outfile=str(Path(folder)/"movi-resumo-financeiro.jpg")
   argv=["/usr/bin/ffmpeg","-hide_banner","-loglevel","error","-nostdin","-y",
    "-f","lavfi","-i","color=c=0xf5f8f2:s=900x705:d=1",
    "-vf",",".join(filters),"-frames:v","1","-update","1","-q:v","3",outfile]

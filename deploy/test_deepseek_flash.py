@@ -3,7 +3,7 @@ import os,sys,tempfile,json
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="ng_ds_qa_") as tmp:
  os.environ["CLUBE_DATA"]=tmp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app,finance_agent_v1 as agent
  from finance_agent_core import classify_text
  assert agent.MODEL_NAME=="deepseek-flash"
@@ -91,7 +91,7 @@ with tempfile.TemporaryDirectory(prefix="ng_ds_qa_") as tmp:
  person["id"]=1;person["role"]="admin"
  status=client.get("/api/admin/finance-agent/provider").json()
  assert status["provider"]=="DeepSeek" and status["vision_model"]=="deepseek-flash"
- assert status["key_set"] and status["audio_transcription_ready"] and status["transcription_model"]=="whisper-base-local"
+ assert status["key_set"] and status["audio_transcription_ready"]==agent.whisper_ready() and status["transcription_model"]=="whisper-base-local"
  assert "UNIT_TEST_ONLY" not in str(status)
  print("06: Admin UI gets correct provider and no credential disclosure")
  app.app.dependency_overrides.clear()

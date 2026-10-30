@@ -31,7 +31,9 @@ with tempfile.TemporaryDirectory(prefix="movi-legal-qa-") as folder:
  # Sem responder Sim/Não sobre o gestor: não cria conta (consentimento não pode vir pré-marcado).
  r=cli.post("/api/enroll",json={**base,"invite":"tok1","username":"semresposta","legal":{"version":doc["version"],"required":everything,"optional":{"marketing":True}}},headers=H)
  assert r.status_code==422 and "gestor" in r.json()["detail"],r.text
- assert doc["default_on"]==["marketing"] and doc["must_answer"]==["assisted_entry"]
+ assert doc["default_on"]==[] and doc["must_answer"]==["assisted_entry"]
+ assert "Li que" in next(x["text"] for x in doc["required"] if x["id"]=="analytics")
+ assert "começa desativada" in next(x["text"] for x in doc["optional"] if x["id"]=="marketing")
  # 2. Aceite completo, ofertas ligadas e gestor "Não": conta criada, aceite gravado, parceiros desligados.
  legal={"version":doc["version"],"required":everything,"optional":{"marketing":True,"assisted_entry":False}}
  r=cli.post("/api/enroll",json={**base,"invite":"tok1","username":"comtermo","legal":legal},headers=H);assert r.status_code==200,r.text

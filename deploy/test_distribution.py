@@ -3,7 +3,7 @@ from pathlib import Path
 with tempfile.TemporaryDirectory(prefix="ng_dist_test_") as tmp:
  os.environ["CLUBE_DATA"]=tmp
  os.environ["CLUBE_ENABLE_SENSITIVE"]="0"
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app
  from fastapi.testclient import TestClient
  from distribution_v5 import calc

@@ -3,8 +3,8 @@ import os,sys,tempfile
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="ng_trial_login_") as tmp:
  os.environ["CLUBE_DATA"]=tmp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
- import app
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+ import app,legal_v8
  with app.db() as c:
   pwd="long random example password 2026"
   c.execute("INSERT INTO users(id,username,phash,role,status,name,created_at,must_change) VALUES(?,?,?,?,?,?,?,0)",
@@ -20,8 +20,15 @@ with tempfile.TemporaryDirectory(prefix="ng_trial_login_") as tmp:
  assert person.status_code==200 and person.json()["user"]["role"]=="driver"
  print("02 - role is driver only: PASS")
  r=site.get("/api/admin/overview")
+ assert r.status_code==428  # V8 requires current legal terms before driver APIs
+ legal={"version":legal_v8.VERSION,
+        "required":{key:True for key,_ in legal_v8.REQUIRED},
+        "optional":{key:False for key,_ in legal_v8.OPTIONAL}}
+ accept=site.post("/api/legal/accept",json=legal,headers=h)
+ assert accept.status_code==200,accept.text
+ r=site.get("/api/admin/overview")
  assert r.status_code==403
- print("03 - administrator data forbidden: PASS")
+ print("03 - terms required; admin data stays forbidden after acceptance: PASS")
  r=site.get("/api/finance-agent/release")
  assert r.status_code==200 and r.json()["available"]
  assert r.json()["consent_needed"]

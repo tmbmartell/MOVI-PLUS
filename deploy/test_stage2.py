@@ -3,7 +3,7 @@ import os,tempfile,sys,datetime
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="novagente-stage2qa-") as folder:
  os.environ["CLUBE_DATA"]=folder
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app
  with app.db() as c:
   for i,role in ((101,"admin"),(201,"driver"),(202,"driver"),(203,"driver")):

@@ -53,7 +53,9 @@ def active_fields(profile):
  out=[f for f in ALL if f[0]!="cnh_upload"]
  resource=profile.get("bid_resources")
  if resource and resource!="dinheiro":out=[f for f in out if f[0]!="bid_cash"]
- if resource and resource!="carro/moto":out=[f for f in out if f[0] not in ("vehicle_finance","vehicle_plate")]
+ # A placa é pedida em todos os cadastros de motorista com consentimento para identificação;
+ # o financiamento do veículo continua condicional ao recurso indicado no lance.
+ if resource and resource!="carro/moto":out=[f for f in out if f[0]!="vehicle_finance"]
  return out
 def progress(profile,enabled_sensitive=False):
  rows=[f for f in active_fields(profile) if enabled_sensitive or not f[5]]
