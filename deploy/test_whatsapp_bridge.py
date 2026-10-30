@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="ng_wa_bridge_") as temp:
  os.environ["CLUBE_DATA"]=temp
  os.environ["CLUBE_ENABLE_SENSITIVE"]="0"
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app
  import whatsapp_bridge_v5 as wa
  with app.db() as c:
