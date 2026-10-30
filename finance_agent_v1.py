@@ -7,7 +7,7 @@ import base64,datetime,json,re,secrets,subprocess,asyncio,fcntl,os,sys,resource
 from fastapi import APIRouter,Depends,File,UploadFile,HTTPException
 from pathlib import Path
 import httpx
-from app import db,driver,admin,auth,enc,dec,cents,audit,now
+from app import db,driver,admin,auth,enc,dec,cents,audit,now,DATA
 from finance_agent_core import classify_text,validate_proposal,money_value,tips
 from finance_agent_limits_v1 import route,OUT_OF_SCOPE,WELCOME,FINANCE_QUERY,usage,reserve,complete,refund,LIMITS
 
@@ -294,7 +294,7 @@ def speech_to_text(blob,mime):
    raise HTTPException(503,"Servidor ocupado para transcrever audio. Tente novamente.")
  except (OSError,ValueError,StopIteration):
   raise HTTPException(503,"Nao foi possivel verificar os recursos do servidor.")
- lockpath=Path(__file__).resolve().parent/"data"/"finance_whisper.lock"
+ lockpath=DATA/"finance_whisper.lock"
  with open(lockpath,"a+b") as lock:
   try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
   except BlockingIOError:
