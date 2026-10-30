@@ -623,3 +623,7 @@ app.include_router(finance_auto_report_router)
 # Pix CNPJ: chave configurável, compromisso mensal e declaração manual. Integração bancária OFF.
 from pix_deposit_v1 import router as pix_deposit_router
 app.include_router(pix_deposit_router)
+
+# Reconciliação MANUAL: gestor confere extrato e registra evidência, sem API bancária.
+from pix_reconciliation_v1 import router as pix_reconciliation_router
+app.include_router(pix_reconciliation_router)
