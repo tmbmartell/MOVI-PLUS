@@ -26,6 +26,10 @@ Aplicativo de gestão financeira e acompanhamento do Clube do Motorista. Base at
 - **Decisão atual:** depósitos via **chave Pix CNPJ direta**, sem gateway Pag.me. A chave é configurada no painel do gestor e armazenada criptografada, com verificação do titular exigida antes de liberar. O MOVI+ envia instruções, não faz Pix nem confirma crédito bancário; a conciliação segue manual até existir integração bancária autenticada.
 - **Conferência manual já desenvolvida:** gestor registra crédito confirmado após consulta ao extrato, ou divergência; histórico auditável, referência bancária apenas em hash, acesso individual e testes 7/7. **Não constitui conciliação automática e não representa pagamento realmente confirmado sem extrato.**
 
+
+- O gestor pode configurar os **horários individuais dos três turnos**, padrão 09h, 14h e 19h no horário de Porto Velho. O aviso inclui o favorecido informado e exige conferência no banco; alterações não ativam disparos.
+- Em 30/10/2026 o backup local criptografado da V5 foi **validado em teste de restauração somente leitura** (chave de backup, integridade do pacote e SQLite). A cópia externa e restauração completa do serviço continuam pendentes.
+
 ## Documentação
 - [Organograma e arquitetura](docs/arquitetura/ORGANOGRAMA.md)
 - [Capturas de tela](docs/prints/INDICE-PRINTS.md)
@@ -33,6 +37,8 @@ Aplicativo de gestão financeira e acompanhamento do Clube do Motorista. Base at
 - [Proteção contra segredos no Git](docs/publicacao/SEGURANCA.md)
 - [Guia do relatório agendado](deploy/README_MOVI_AUTO_REPORT.md)
 - [Guia Pix direto (CNPJ)](deploy/README_MOVI_PIX.md)
+- [Checklist de aceite e publicação segura](deploy/RELEASE_ACCEPTANCE_MOVI_2026-10-30.md)
+- [Verificador de backup criptografado](deploy/verify_backup_v1.py)
 - [Especificação para integrar o provedor de cobrança](docs/publicacao/PAGME-INTEGRATION-CHECKLIST.md)
 - [Mapa visual de arquitetura](docs/arquitetura/ARQUITETURA-VISUAL.svg)
 
