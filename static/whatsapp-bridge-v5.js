@@ -55,7 +55,12 @@ async function whatsappPage(){
  '<div class="stack"><button type="button" id="waCheck" class="btn-lite" '+(isSet?'':'disabled')+'>Verificar conexão e sessão</button>'+
  '<button type="button" id="waCreate" class="btn-lite" '+(isSet?'':'disabled')+'>Criar sessão do Clube (parada)</button>'+
  '<button type="button" id="waStart" class="btn-lite" '+(isSet?'':'disabled')+'>Iniciar sessão para emparelhar</button>'+
- '<button type="button" id="waQR" class="btn" '+(isSet?'':'disabled')+'>Mostrar QR Code temporário</button></div>'+
+ '<button type="button" id="waQR" class="btn" '+(isSet?'':'disabled')+'>Mostrar QR Code temporário</button>'+
+ '<button type="button" id="waRefresh" class="btn-lite" '+(isSet?'':'disabled')+'>Renovar QR travado (apenas sessão desconectada)</button></div>'+
+ '<div class="notice">Se está usando apenas o celular, pode vincular pelo código. O telefone não é armazenado pelo MOVI+.</div>'+
+ '<div class="stack"><label>Telefone do WhatsApp a vincular (DDI + DDD + número, só algarismos)</label>'+
+ '<input id="waPhoneNumber" type="tel" inputmode="tel" maxlength="16" placeholder="55 + DDD + telefone" autocomplete="off">'+
+ '<button type="button" id="waCode" class="btn-lite" '+(isSet?'':'disabled')+'>Gerar código de pareamento</button></div>'+
  '<div id="waQRArea" class="wa-qr-area"></div></div></div>'+
  '<div class="card"><h3>3. Próximo passo para testar</h3><div class="wa-steps"><div><span>01</span><b>Verificar sessão</b><p>O estado WORKING confirma que a WAHA está pareada.</p></div><div><span>02</span><b>Entrar como motorista de teste</b><p>Na aba Agente financeiro, autorize o uso do agente e gere o código individual.</p></div><div><span>03</span><b>Vincular número do piloto</b><p>Envie VINCULAR e o código do seu WhatsApp de teste para o número pareado do Clube.</p></div></div>'+
  '<div class="notice warn"><b>Somente o piloto autorizado.</b> Até o vínculo, o Clube não responde a nenhum número. Não existem campanhas automáticas ou transferências Pix.</div></div>';
@@ -105,6 +110,29 @@ async function whatsappPage(){
  action('#waStart','start','Iniciar esta sessão WAHA para permitir emparelhamento? Nenhuma mensagem será enviada.',d=>{
   setState('<div class="notice"><b>Iniciada para emparelhamento.</b> Espere alguns segundos e abra o QR Code.</div>');msg('Sessão iniciada.');
  });
+ action('#waRefresh','refresh-qr','Atenção: atualizar o QR reinicia somente a sessão desconectada do Clube. Confirmar?',d=>{
+  setState('<div class="notice"><b>Renovação solicitada.</b> Verifique o status e, quando indicar SCAN_QR_CODE, clique em Mostrar QR Code.</div>');
+  msg('QR anterior invalidado. Exiba o novo QR após a sessão iniciar.');
+ });
+ $('#waCode').onclick=async()=>{
+  const number=$('#waPhoneNumber').value.trim().replace(/^\+/,'');
+  if(!/^[0-9]{10,15}$/.test(number))return msg('Digite DDI, DDD e telefone, usando apenas números.');
+  const btn=$('#waCode');btn.disabled=true;
+  $('#waQRArea').replaceChildren();
+  try{
+   const d=await request('admin/whatsapp-bridge/request-code',{phone_number:number});
+   $('#waPhoneNumber').value='';
+   const area=$('#waQRArea');
+   const heading=document.createElement('h4');heading.textContent='Código temporário de pareamento';
+   const code=document.createElement('p');code.className='wa-pairing-code';
+   code.style.cssText='font:700 1.65rem monospace;letter-spacing:.14em;text-align:center';
+   code.textContent=d.code;
+   const help=document.createElement('p');
+   help.textContent='No celular: WhatsApp → Aparelhos conectados → Conectar aparelho → Vincular com número de telefone. Digite o código e depois clique em Verificar conexão e sessão.';
+   area.append(heading,code,help);
+  }catch(err){msg(err.message)}
+  finally{btn.disabled=false}
+ };
  action('#waQR','qr',null,d=>{
   const area=$('#waQRArea');
   const h=document.createElement('h4');h.textContent='Escaneie no WhatsApp';

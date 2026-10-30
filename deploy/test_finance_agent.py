@@ -3,7 +3,7 @@ import os,sys,tempfile,datetime
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="novagente_finagentqa_") as temp:
  os.environ["CLUBE_DATA"]=temp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app,finance_agent_v1 as agent
  from finance_agent_core import classify_text,validate_proposal
  assert classify_text("Gastei R$ 152,45 no supermercado hoje")["category"]=="Supermercado"

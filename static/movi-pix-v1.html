@@ -1,0 +1,21 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Meus depósitos Pix · MOVI+</title><style>
+:root{font-family:system-ui,Segoe UI,sans-serif;background:#101f29;color:#f8f7ed;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;padding:18px 14px 48px}main{max-width:670px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{color:#f6be71;font-size:1.2rem;font-weight:850}a{color:#f6be71}.panel{border-radius:16px;padding:18px;margin:13px 0;background:#1a3341;border:1px solid #355260}
+label{display:block;color:#d7e2e5;font-size:.9rem;margin:10px 0}input,button{font:inherit;border:1px solid #728e98;border-radius:9px;padding:11px;color:#fff;background:#244250;max-width:100%}
+button{cursor:pointer}button.gold{color:#182c31;background:#e7b978;font-weight:750;border-color:#e7b978}
+button:disabled{opacity:.45;cursor:not-allowed}.note{font-size:.83rem;color:#bed0d5;line-height:1.5}.key{overflow-wrap:anywhere;font-size:1.4rem;font-weight:800;letter-spacing:.04em}
+.actions{display:flex;gap:9px;flex-wrap:wrap}.actions button{flex:1;min-width:130px}.turn{border-bottom:1px solid #385463;padding:16px 0}.turn:last-child{border:0}
+.turn strong{display:block;font-size:1.2rem;margin:6px 0}input[type=checkbox]{width:auto}.state{min-height:24px}button:focus-visible,input:focus-visible{outline:3px solid #f6be71}
+</style><script src="/assets/movi-pix-driver-v1.js" defer></script></head><body><main>
+<header><span class="brand">MOVI+</span><a href="/meu-fluxo">Meu fluxo financeiro</a></header>
+<h1>Meus depósitos Pix</h1><p class="note">Os valores são divididos em três turnos diários e ajustados para fechar exatamente a parcela do mês.</p>
+<section class="panel"><label for="day">Dia do depósito</label><input id="day" type="date"><button id="show-day" class="gold" type="button">Consultar</button><p id="day-status" class="note state" role="status"></p></section>
+<div id="pix-content" hidden>
+<section class="panel"><h2>Chave Pix do recebedor</h2><p class="key" id="pix-key"></p><p id="pix-name" class="note"></p>
+<div class="actions"><button id="copy-key" type="button" class="gold">Copiar chave Pix</button></div><p class="note">Confira o nome do titular no aplicativo do banco antes de transferir. Um pagamento nunca é confirmado apenas por mensagem.</p></section>
+<section class="panel"><h2>Programação do dia</h2><div id="turns"></div></section>
+<section class="panel"><h2>Avisos pelo WhatsApp</h2><p class="note">São opcionais e só começam após a autorização e o vínculo do seu WhatsApp, com liberação do Clube.</p>
+<label><input id="notice-consent" type="checkbox"> Quero receber avisos dos meus três turnos</label><button id="save-consent" type="button" class="gold">Salvar minha escolha</button><p id="consent-status" role="status" class="note"></p></section>
+</div>
+</main></body></html>

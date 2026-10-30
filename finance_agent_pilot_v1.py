@@ -120,7 +120,7 @@ def send_chart_once(uid,chat,event_id,report):
    c.commit()
   body={"session":"clube-motorista","chatId":chat,
         "file":{"mimetype":"image/jpeg","data":base64.b64encode(jpeg).decode("ascii"),
-                "filename":"clube-motorista-resumo.jpg"},
+                "filename":"movi-resumo-financeiro.jpg"},
         "caption":"📊 Seu minigráfico do mês. Somente lançamentos confirmados; não é saldo bancário."}
   ok=False
   try:

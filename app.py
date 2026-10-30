@@ -180,6 +180,8 @@ def validate_value(k,v,allow_identity=False):
  if f[5] and not allow_identity:
   raise HTTPException(403,"Autorize o cadastro dos dados de identificação em Autorizações antes de preenchê-los.")
  if typ=="file":raise HTTPException(422,"Use a área de documentos")
+ if k=="vehicle_plate" and (v is None or str(v).strip()==""):
+  raise HTTPException(422,"Placa obrigatória nesta etapa do cadastro")
  if v is None or v=="":return ""
  if typ=="multi":
   if not isinstance(v,list) or len(v)>len(f[4]) or any(x not in f[4] for x in v):raise HTTPException(422,"Seleção múltipla inválida")
@@ -198,6 +200,11 @@ def validate_value(k,v,allow_identity=False):
  if typ=="cpf" and not re.fullmatch(r"\d{11}",re.sub(r"\D","",s)):raise HTTPException(422,"CPF inválido")
  if typ=="email" and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+",s):raise HTTPException(422,"E-mail inválido")
  if typ=="phone" and not re.fullmatch(r"\+?[0-9 ()-]{10,24}",s):raise HTTPException(422,"Telefone inválido")
+ if k=="vehicle_plate":
+  plate=s.upper().replace("-","")
+  if not re.fullmatch(r"[A-Z]{3}\d(?:\d{3}|[A-Z]\d{2})",plate):
+   raise HTTPException(422,"Placa inválida. Use ABC1234 ou ABC1D23")
+  return plate
  return s
 @app.get("/api/schema")
 def schema(u=Depends(auth)):
@@ -231,7 +238,7 @@ def next_field(p,authorized=False):
  skipped=set(p.get("_skipped",[]))
  for f in active_fields(p):
   if f[2]=="file" or f[5] and not authorized:continue
-  if p.get(f[0]) in (None,"",[]) and f[0] not in skipped:return describe(f)
+  if p.get(f[0]) in (None,"",[]) and (f[0]=="vehicle_plate" or f[0] not in skipped):return describe(f)
  return None
 @app.get("/api/profile/next")
 def next_question(u=Depends(driver)):
@@ -246,6 +253,7 @@ def answer_question(data:dict,u=Depends(driver)):
   if not f:return {"ok":True,"done":True}
   if data.get("key")!=f["key"]:raise HTTPException(409,"Pergunta alterada, recarregue")
   if data.get("skip") is True:
+   if f["key"]=="vehicle_plate":raise HTTPException(422,"Informe a placa para concluir esta etapa do cadastro")
    skipped=set(p.get("_skipped",[]));skipped.add(f["key"]);p["_skipped"]=list(skipped)
   else:p[f["key"]]=validate_value(f["key"],data.get("value"),authorized)
   save_profile(c,u["id"],p);audit(c,u["id"],"interview:answer",f["key"]);c.commit()
@@ -375,6 +383,9 @@ def enroll(data:dict):
  if not re.fullmatch(r"[a-z0-9_]{4,32}",username) or len(name)<2 or len(pwd)<14 or not re.search("[A-Za-z]",pwd) or not re.search(r"\d",pwd):
   raise HTTPException(422,"Nome, usuário ou senha inválidos; senha precisa de 14 caracteres com letras e números")
  if data.get("accepted_rules") is not True:raise HTTPException(422,"É necessário confirmar ciência das condições do programa")
+ # Termos V8: cadastro só com todos os itens obrigatórios marcados; opcionais ficam como o motorista escolheu.
+ import legal_v8
+ legal_required,legal_optional=legal_v8.validate(data.get("legal"))
  with db() as c:
   c.execute("BEGIN IMMEDIATE")
   r=c.execute("SELECT hash FROM invites WHERE hash=? AND used_uid IS NULL AND expires>?",(sha(token),stamp())).fetchone()
@@ -383,6 +394,7 @@ def enroll(data:dict):
   c.execute("INSERT INTO users(username,phash,role,status,name,created_at) VALUES(?,?,?,?,?,?)",(username,password_hash(pwd),"driver","pending",name,now()))
   uid=c.execute("SELECT last_insert_rowid()").fetchone()[0]
   c.execute("INSERT INTO consents(uid,updated_at) VALUES(?,?)",(uid,now()))
+  legal_v8.record(c,uid,legal_required,legal_optional,"cadastro")
   save_profile(c,uid,{})
   c.execute("UPDATE invites SET used_uid=? WHERE hash=?",(uid,sha(token)))
   audit(c,uid,"enroll:requested");c.commit()
@@ -478,8 +490,11 @@ def export_self(u=Depends(driver)):
   agent_choices=agent_options(c,u["id"])
   agent_suggestions=[{"id":r["id"],"status":r["status"],"created_at":r["created_at"],"proposal":dec(r["encrypted"])}
    for r in c.execute("SELECT id,status,created_at,encrypted FROM finance_agent_proposals WHERE uid=? ORDER BY id",(u["id"],))]
+  import legal_v8
+  legal_v8.init(c)
+  legal_history=[dict(r) for r in c.execute("SELECT version,accepted_at,required,optional,origin FROM legal_acceptances WHERE uid=? ORDER BY id",(u["id"],))]
   audit(c,u["id"],"privacy:export");c.commit()
-  return {"profile":p,"consents":consent(c,u["id"]),"finances":finance,
+  return {"profile":p,"consents":consent(c,u["id"]),"legal_acceptances":legal_history,"finances":finance,
    "finance_agent_authorizations":agent_choices,"finance_agent_proposals":agent_suggestions,
    "note":"Exportação individual, sem senhas, documentos, mídia original ou chaves externas"}
 @app.post("/api/privacy/delete-request")
@@ -597,3 +612,26 @@ app.include_router(finance_agent_release_router)
 
 from finance_agent_pilot_v1 import router as finance_agent_pilot_router
 app.include_router(finance_agent_pilot_router)
+
+# Termos de Uso, Política de Privacidade e de Cookies com aceite registrado (V8).
+from legal_v8 import router as legal_router,install as legal_install
+app.include_router(legal_router)
+legal_install(app)
+
+# Versão integrada apenas em branch de homologação: relatórios e gastos recorrentes.
+from finance_flow_v1 import router as finance_flow_router
+app.include_router(finance_flow_router)
+from finance_recurring_v1 import router as finance_recurring_router
+app.include_router(finance_recurring_router)
+
+# Opt-in scheduled WhatsApp summaries; admin/env gates OFF by default.
+from finance_auto_report_v1 import router as finance_auto_report_router
+app.include_router(finance_auto_report_router)
+
+# Pix CNPJ: chave configurável, compromisso mensal e declaração manual. Integração bancária OFF.
+from pix_deposit_v1 import router as pix_deposit_router
+app.include_router(pix_deposit_router)
+
+# Reconciliação MANUAL: gestor confere extrato e registra evidência, sem API bancária.
+from pix_reconciliation_v1 import router as pix_reconciliation_router
+app.include_router(pix_reconciliation_router)

@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="ng_wa_bridge_") as temp:
  os.environ["CLUBE_DATA"]=temp
  os.environ["CLUBE_ENABLE_SENSITIVE"]="0"
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app
  import whatsapp_bridge_v5 as wa
  with app.db() as c:
@@ -71,10 +71,42 @@ with tempfile.TemporaryDirectory(prefix="ng_wa_bridge_") as temp:
   assert q.json()["data_url"].startswith("data:image/png;base64,")
  assert all("/sendText" not in x[1] and "/api/messages" not in x[1] for x in calls)
  print("06 - session prepared stopped, QR returned, no messages sent: OK")
+ pair_phone="5511999999999"
+ def fake_pair(conf,method,path,body=None,accept=None):
+  calls.append((method,path,body))
+  if method=="GET" and path.endswith("/api/sessions/clube-motorista"):
+   return Response({"status":"SCAN_QR_CODE","me":None,"engine":{"engine":"WEBJS"}}),200
+  if method=="POST" and path.endswith("/restart"):
+   return Response({"status":"STARTING"}),200
+  if method=="POST" and path.endswith("/auth/request-code"):
+   assert body=={"phoneNumber":pair_phone}
+   return Response({"code":"ABCD-1234"}),200
+  raise AssertionError("Unexpected operation")
+ with patch.object(wa,"waha",side_effect=fake_pair):
+  assertcode(client.post("/api/admin/whatsapp-bridge/request-code",json={"phone_number":"fake"},headers=H),422)
+  assertcode(client.post("/api/admin/whatsapp-bridge/request-code",json={"phone_number":pair_phone},headers=H),200)
+  assert client.post("/api/admin/whatsapp-bridge/request-code",json={"phone_number":pair_phone},headers=H).status_code==429
+  recovered=post("refresh-qr")
+  assertcode(recovered,200)
+  assert recovered.json()["status"]=="STARTING"
+ print("07 - code and refresh require admin and unpaired session; temporary phone not persisted: OK")
+ with app.db() as c:
+  audit_items=[x["target"] for x in c.execute("SELECT target FROM audit")]
+  assert all(pair_phone not in x and "ABCD-1234" not in x for x in audit_items)
+ def paired(conf,method,path,body=None,accept=None):
+  if method=="GET" and path.endswith("/api/sessions/clube-motorista"):
+   return Response({"status":"WORKING","me":{"id":"MASKED"}}),200
+  raise AssertionError("Paired account must not be reset")
+ wa._throttle.pop((333,"refresh_qr"),None)
+ wa._throttle.pop((333,"request_code"),None)
+ with patch.object(wa,"waha",side_effect=paired):
+  assertcode(post("refresh-qr"),409)
+  assertcode(client.post("/api/admin/whatsapp-bridge/request-code",json={"phone_number":pair_phone},headers=H),409)
+ print("08 - WORKING account protected against refresh and pairing requests: OK")
  assertcode(client.delete("/api/admin/whatsapp-bridge",headers=H),200)
  assert not status().json()["configured"]
- print("07 - remove local config without deleting remote session: OK")
+ print("09 - remove local config without deleting remote session: OK")
  assert wa.SEND_MESSAGES_ENABLED is False and wa.INGEST_MESSAGES_ENABLED is False
- print("08 - messaging remains OFF: OK")
+ print("10 - messaging remains OFF: OK")
  app.app.dependency_overrides.clear()
-print("SUCCESS: 8 tests, isolated temporary database, no real WAHA calls.")
+print("SUCCESS: 10 tests, isolated temporary database, no real WAHA calls.")

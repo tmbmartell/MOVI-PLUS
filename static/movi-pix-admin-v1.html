@@ -1,0 +1,51 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestão Pix · MOVI+</title><style>
+:root{font-family:system-ui,Segoe UI,sans-serif;background:#101f29;color:#f7f6ee;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;padding:20px 14px 60px}main{max-width:770px;margin:auto}
+h1{font-size:1.7rem}h2{font-size:1.16rem}a{color:#f6be71}.brand{font-weight:850;color:#f6be71;letter-spacing:.1em}
+section{background:#1a3341;border:1px solid #395463;padding:18px;border-radius:14px;margin:14px 0}
+label{display:grid;gap:6px;margin:12px 0;color:#c3d4da;font-size:.9rem}
+input,select,button{font:inherit;border-radius:9px;padding:11px;background:#294655;color:#fff;border:1px solid #5a7782;max-width:100%;width:100%}
+button{cursor:pointer;background:#e8b879;color:#192935;font-weight:700}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ffdb93}
+.note{font-size:.84rem;color:#c7d6da;line-height:1.5}.warning{color:#ffe0aa}.checkbox{display:flex;align-items:center;gap:8px}.checkbox input{width:auto}
+.status{min-height:1.5rem;font-size:.86rem}header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+hr{border:0;border-top:1px solid #44606c;margin:20px 0}
+.review-item{border:1px solid #4b6874;border-radius:12px;margin:10px 0;background:#203c49;padding:12px}
+.review-item summary{cursor:pointer;font-size:.88rem;line-height:1.5;font-weight:700;outline-offset:5px}
+.review-item[open]{background:#294753}
+.review-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.review-form label{min-width:0;word-break:break-word}
+.review-form button{grid-column:1/-1}
+@media(max-width:620px){.review-form{grid-template-columns:1fr}}
+
+.review-pages{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px}.review-pages button{width:auto;flex:1;max-width:145px}.review-pages button:disabled{opacity:.4;cursor:not-allowed}.review-form .actions{display:flex;gap:8px;grid-column:1 / -1}.review-form .actions button{min-width:0}@media(max-width:620px){.review-form .actions{flex-direction:column}}</style><script src="/assets/movi-pix-admin-v1.js" defer></script></head>
+<body><main><header><span class="brand">MOVI+ · GESTÃO</span><a href="/">Voltar ao painel</a></header>
+<h1>Depósitos via Pix</h1><p class="note">Uma chave centralizada, valores individuais por motorista e três turnos por dia. O MOVI+ envia apenas instruções e registra declarações — não movimenta recursos nem verifica o recebimento no banco.</p>
+<section><h2>1. Chave Pix do recebedor</h2><form id="receiver-form">
+<label>Chave Pix CNPJ <input name="key" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" required></label>
+<label>Nome do recebedor exibido pelo banco <input name="recipient_name" maxlength="120" placeholder="Informe após conferir no banco"></label>
+<label class="checkbox"><input name="bank_verified" type="checkbox"> Conferi a chave e o nome do titular no aplicativo bancário</label>
+<label class="checkbox"><input name="enabled" type="checkbox"> Liberar a chave para motoristas com parcela configurada</label>
+<button type="submit">Salvar configuração</button></form><p class="status" id="receiver-status" role="status"></p>
+<p class="note warning">Salvar o CNPJ não confirma que essa chave está cadastrada como Pix. O recebedor deve ser conferido antes de ativar.</p></section>
+<section><h2>2. Horários dos três lembretes</h2><p class="note">Defina os horários locais de Porto Velho. Salvar não liga o envio automático.</p><form id="schedule-form">
+<label>Manhã (6h a 11h) <input name="manha" type="number" min="6" max="11" step="1" value="9" required></label>
+<label>Tarde (12h a 17h) <input name="tarde" type="number" min="12" max="17" step="1" value="14" required></label>
+<label>Noite (18h a 22h) <input name="noite" type="number" min="18" max="22" step="1" value="19" required></label>
+<button type="submit">Salvar horários</button></form><p id="schedule-status" class="status" role="status"></p></section>
+<section><h2>3. Parcela individual do motorista</h2><form id="driver-form">
+<label>Buscar motorista por nome, usuário ou ID <input id="driver-search" maxlength="60" placeholder="Digite o nome ou número do motorista"></label>
+<button type="button" id="driver-find">Pesquisar motorista</button><p id="driver-search-status" class="note" role="status">Exibindo os 25 motoristas mais recentes. Busque para encontrar os demais.</p>
+<label>Motorista <select name="uid" id="driver-select" required><option value="">Selecione um motorista</option></select></label>
+<label>Valor da parcela mensal (R$) <input name="monthly_amount" type="number" step=".01" min=".01" required placeholder="Ex.: 1500.00"></label>
+<label class="checkbox"><input name="active" type="checkbox" checked> Parcela ativa</label>
+<button type="submit">Salvar parcela</button></form><p class="status" id="driver-status" role="status"></p><p class="note">Os valores diários são calculados para 28, 29, 30 ou 31 dias sem exceder a parcela do mês.</p></section>
+<section><h2>4. Conferência manual dos depósitos</h2><p class="note">Cada motorista pode informar que pagou. Para confirmar, confira no extrato bancário o valor, a data e a referência única da transferência. O MOVI+ não acessa contas bancárias.</p>
+<form id="review-filters" class="review-form" style="margin:14px 0">
+<label>Mês <input id="review-month" type="month"></label>
+<label>Situação <select id="review-state"><option value="">Todas</option><option value="pending">Aguardando conferência</option><option value="unmatched">Divergência</option><option value="confirmed_manual">Confirmado manualmente</option></select></label>
+<div class="actions"><button type="submit">Filtrar depósitos</button><button type="button" id="review-clear">Limpar filtros</button></div>
+</form>
+<p class="status" id="review-status" role="status"></p><div id="declared-list">Nenhuma declaração registrada.</div>
+<div class="review-pages"><button id="review-prev" type="button">Anterior</button><span id="review-pagination" class="note">Página 1</span><button id="review-next" type="button">Próxima</button></div></section>
+</main></body></html>

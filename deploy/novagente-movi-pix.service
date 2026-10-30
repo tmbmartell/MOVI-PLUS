@@ -1,0 +1,22 @@
+[Unit]
+Description=MOVI+ avisos de depósito Pix (apenas piloto autorizado)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=sentinelx
+Group=sentinelx
+WorkingDirectory=/srv/clube-motorista-v3/financeiro-secure-v5
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=CLUBE_DATA=/srv/clube-motorista-v3/financeiro-secure-v5/data
+Environment=MOVI_PIX_REMINDERS_ENABLED=0
+EnvironmentFile=-/etc/novagente/movi-pix.env
+ExecStart=/srv/clube-motorista-v3/financeiro-secure-v5/.venv/bin/python -m pix_deposit_v1 --send
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/clube-motorista-v3/financeiro-secure-v5/data
+UMask=0077
+TimeoutStartSec=120

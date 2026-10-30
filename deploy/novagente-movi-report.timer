@@ -1,0 +1,11 @@
+[Unit]
+Description=MOVI+ - verifica resumo semanal/mensal a cada hora
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=2m
+Unit=novagente-movi-report.service
+
+[Install]
+WantedBy=timers.target
