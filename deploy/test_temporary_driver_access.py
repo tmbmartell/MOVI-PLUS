@@ -3,7 +3,7 @@ import os,sys,tempfile
 from fastapi.testclient import TestClient
 with tempfile.TemporaryDirectory(prefix="ng_trial_login_") as tmp:
  os.environ["CLUBE_DATA"]=tmp
- sys.path.insert(0,"/srv/clube-motorista-v3/financeiro-secure-v5")
+ sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
  import app
  with app.db() as c:
   pwd="long random example password 2026"
