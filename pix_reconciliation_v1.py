@@ -52,28 +52,53 @@ def _safe_amount(value):
     return amount
 
 @router.get("/api/admin/pix/reviews")
-def admin_reviews(month:str="",u=Depends(admin)):
+def admin_reviews(month:str="", state:str="", page:int=1, page_size:int=50, u=Depends(admin)):
     if month and not MONTH.fullmatch(month):
         raise HTTPException(422,"Mês inválido")
+    if state not in ("","pending","confirmed_manual","unmatched"):
+        raise HTTPException(422,"Filtro inválido")
+    if not 1<=page<=100000 or not 1<=page_size<=100:
+        raise HTTPException(422,"Página ou tamanho fora do limite")
+    where=["1=1"]
+    params=[]
+    if month:
+        where.append("substr(d.entry_day,1,7)=?")
+        params.append(month)
+    if state=="pending":
+        where.append("r.state IS NULL")
+    elif state:
+        where.append("r.state=?")
+        params.append(state)
+    predicate=" AND ".join(where)
+    joins=("FROM movi_pix_declarations d JOIN users u ON u.id=d.uid "
+           "LEFT JOIN movi_pix_manual_reviews r ON r.declaration_id=d.id ")
     with db() as conn:
+        summary=conn.execute(
+            "SELECT COUNT(*) AS count, "
+            "COALESCE(SUM(d.expected_cents),0) AS declared_cents, "
+            "COALESCE(SUM(CASE WHEN r.state='confirmed_manual' THEN r.bank_amount_cents ELSE 0 END),0) "
+            "AS confirmed_manually_cents, "
+            "COALESCE(SUM(CASE WHEN r.state='unmatched' THEN 1 ELSE 0 END),0) AS unmatched_count, "
+            "COALESCE(SUM(CASE WHEN r.state IS NULL THEN 1 ELSE 0 END),0) AS pending_count "
+            +joins+"WHERE "+predicate,params).fetchone()
         rows=[dict(x) for x in conn.execute(
-          "SELECT d.id,d.uid,u.name,d.entry_day,d.slot,d.expected_cents,d.created_at, "
-          "r.state AS review_state,r.bank_amount_cents,r.statement_day,r.reviewed_at,r.note, "
-          "rv.name AS reviewer_name "
-          "FROM movi_pix_declarations d "
-          "JOIN users u ON u.id=d.uid "
-          "LEFT JOIN movi_pix_manual_reviews r ON r.declaration_id=d.id "
-          "LEFT JOIN users rv ON rv.id=r.reviewer_uid "
-          "WHERE (?='' OR substr(d.entry_day,1,7)=?) "
-          "ORDER BY d.entry_day DESC,d.id DESC LIMIT 300",(month,month))]
-    declared=sum(row["expected_cents"] for row in rows)
-    confirmed=sum(row["bank_amount_cents"] for row in rows if row["review_state"]=="confirmed_manual")
-    return {"items":rows,"count":len(rows),
-      "declared_cents":declared,"confirmed_manually_cents":confirmed,
-      "unmatched_count":sum(r["review_state"]=="unmatched" for r in rows),
-      "pending_count":sum(r["review_state"] is None for r in rows),
-      "external_bank_api_connected":False,
-      "notice":"Conferência humana do extrato, sem conexão bancária automática. Totais limitados às linhas retornadas."}
+            "SELECT d.id,d.uid,u.name,d.entry_day,d.slot,d.expected_cents,d.created_at, "
+            "r.state AS review_state,r.bank_amount_cents,r.statement_day,r.reviewed_at,r.note, "
+            "rv.name AS reviewer_name "
+            +joins+"LEFT JOIN users rv ON rv.id=r.reviewer_uid "
+            +"WHERE "+predicate+" ORDER BY d.entry_day DESC,d.id DESC LIMIT ? OFFSET ?",
+            [*params,page_size,(page-1)*page_size])]
+    total=summary["count"]
+    return {"items":rows, "count":total,
+        "declared_cents":summary["declared_cents"],
+        "confirmed_manually_cents":summary["confirmed_manually_cents"],
+        "unmatched_count":summary["unmatched_count"],
+        "pending_count":summary["pending_count"],
+        "page":page,"page_size":page_size,"pages":(total+page_size-1)//page_size,
+        "has_next":page*page_size<total,
+        "month":month,"state":state,
+        "external_bank_api_connected":False,
+        "notice":"Conferência humana sem API de banco. Totais correspondem ao filtro inteiro, não só à página."}
 
 @router.get("/api/driver/pix/reviews")
 def driver_reviews(date:str="",u=Depends(driver)):
